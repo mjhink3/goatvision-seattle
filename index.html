@@ -408,79 +408,140 @@
   ══════════════════════════════════════════════════════════ */
   @media (max-width: 480px) {
 
-    /* ── LAYOUT ── */
-    #main         { padding:6px; gap:8px; }
-    #ferry-routes { grid-template-columns:1fr; }
-    #extras-grid  { grid-template-columns:1fr; }
-    #events-list  { max-height:none; }
+    /* ── GLOBAL: zero horizontal overflow ── */
+    html, body { overflow-x: hidden; }
+    #main { padding: 6px; gap: 8px; }
+    .panel { max-width: 100%; }
+    .refresh-ts { display: none; }
 
-    /* ── HEADER ── */
+    /* ── HEADER: brand left + clock right on row 1 / tagline on row 2 ── */
     #header {
-      flex-direction:column;
-      align-items:flex-start;
-      gap:6px;
-      padding:8px 10px;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 8px 10px;
     }
-    /* Hide status dot spans; keep only sys-time */
-    #header .header-right span:not(#sys-time) { display:none; }
-    .brand-goat, .brand-vision { font-size:16px; }
-    #sys-time { font-size:12px; }
+    .brand-goat, .brand-vision { font-size: 15px; }
+    .brand-seattle { display: none; }
+    .brand-tagline { font-size: 8px; margin-top: 2px; }
+    .header-right { flex-direction: column; align-items: flex-end; gap: 2px; }
+    #header .header-right span:not(#sys-time) { display: none; }
+    #sys-time { font-size: 13px; }
 
-    /* ── CONDITIONS STRIP ── */
-    .cond-cell  { min-width:90px; }
-    .cond-value { font-size:18px; }
+    /* ── CONDITIONS STRIP: 2-col grid, hide Rainier (6th) + Sunrise (7th) ── */
+    #conditions-content {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .cond-cell { min-width: 0; width: 100%; }
+    .cond-value { font-size: 16px; }
+    #conditions-content .cond-cell:nth-child(6),
+    #conditions-content .cond-cell:nth-child(7) { display: none; }
 
-    /* ── TRAVEL TIMES ── */
-    #tt-filters { display:none; }
+    /* ── ACTIVE INCIDENTS ── */
+    .incident-item { grid-template-columns: 64px 1fr; padding: 5px 8px; }
+    .incident-desc { font-size: 10px; }
+    .incident-meta { font-size: 8px; }
+    #incidents-list { max-height: none; }
+
+    /* ── HIGHWAY TRAVEL TIMES: 2 rows per route ── */
+    #tt-filters { display: none; }
+    #tt-list    { max-height: none; }
     .tt-row {
-      grid-template-columns:auto 1fr;
-      grid-template-rows:auto auto;
-      gap:4px 8px;
-      padding:5px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0 6px;
+      padding: 6px 8px;
     }
-    /* Row 1: tag + name; Row 2: current time (left) + badge (right) */
-    .tt-cur   { grid-column:1; text-align:left; font-size:14px; }
-    .tt-avg   { display:none; }
-    .tt-badge { grid-column:2; text-align:right; align-self:center; }
+    .tt-tag  { order: 1; flex: 0 0 auto; }
+    .tt-name { order: 2; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tt-row::after { content: ''; order: 3; flex-basis: 100%; height: 0; }
+    .tt-cur   { order: 4; margin-left: auto; font-size: 15px; text-align: right; }
+    .tt-avg   { display: none; }
+    .tt-badge { order: 5; flex: 0 0 auto; align-self: center; }
 
-    /* ── FERRY ── */
-    .ferry-boat { font-size:16px; }
-    .ferry-term { font-size:7px; }
+    /* ── DRIVE WINDOW: 6-bar grid, no horizontal overflow ── */
+    #drive-chart-wrap { overflow-x: hidden; }
+    #drive-chart {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      min-width: unset;
+      width: 100%;
+      height: 55px;
+      align-items: end;
+      gap: 2px;
+    }
+    .drive-bar-wrap { flex: none; width: 100%; }
+    .drive-bar-wrap:nth-child(n+7) { display: none; }
+    .drive-bar-label { font-size: 7px; }
+    .drive-bar-score { font-size: 7px; }
 
-    /* ── SCENIC CAMERAS ── */
-    #scenic-grid  { grid-template-columns:1fr 1fr; }
-    .cam-cell img { height:100px; }
-    .cam-cell-ph  { height:100px; }
+    /* ── TRAFFIC MAP: scale via viewBox, no overflow ── */
+    #trafficmap-svg-wrap { padding: 6px; overflow-x: hidden; }
+    #trafficmap-svg { width: 100%; height: auto; display: block; }
+    .tm-legend { flex-wrap: wrap; gap: 6px; }
+    .tm-legend-item { font-size: 8px; }
+    .tm-swatch { width: 14px; }
 
-    /* ── TRANSIT ── */
-    .transit-cols-grid { overflow-x:auto; }
-    #transit-content::before {
-      content:'← Scroll for more lines';
-      display:block;
-      font-size:9px;
-      color:var(--text-dim);
-      padding:5px 10px;
-      border-bottom:1px solid var(--border);
+    /* ── FERRY: single column stacked ── */
+    #ferry-routes { grid-template-columns: 1fr; }
+    .ferry-route { border-right: none; border-bottom: 1px solid var(--border); }
+    .ferry-route:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
+    .ferry-route:last-child { border-bottom: none; }
+    .ferry-boat { font-size: 14px; }
+    .ferry-term { font-size: 7px; }
+    .ferry-track { flex: 1; }
+
+    /* ── GAME DAY & EVENTS ── */
+    #events-list { max-height: none; }
+    .event-item { padding: 6px 8px; }
+    .event-date-day { font-size: 18px; }
+    .event-matchup { font-size: 10px; white-space: normal; }
+    .event-sub { font-size: 8px; }
+    .event-badge { display: none; }
+
+    /* ── SFD DISPATCHES ── */
+    #sfd-summary { display: grid; grid-template-columns: 1fr 1fr; }
+    .sfd-type-cell { min-width: 0; }
+    .sfd-item { font-size: 9px; padding: 4px 8px; }
+    #sfd-list { max-height: none; }
+
+    /* ── SEISMIC PANEL ── */
+    #seismic-quakes { max-height: none; }
+    .volcano-grid { grid-template-columns: 1fr; }
+    .volcano-cell { border-right: none; border-bottom: 1px solid var(--border); }
+    .volcano-cell:last-child { border-bottom: none; }
+
+    /* ── EXTRAS GRID: single column stacked ── */
+    #extras-grid { grid-template-columns: 1fr; }
+
+    /* ── LINK LIGHT RAIL: show 1 Line only, hide others ── */
+    .transit-cols-grid { display: block; }
+    .transit-route-col { display: none; }
+    .transit-route-col:first-child { display: block; border-right: none; min-width: 0; }
+    #transit-content::after {
+      content: 'Open full site for all Link lines';
+      display: block;
+      font-size: 9px;
+      color: var(--text-dim);
+      padding: 6px 10px;
+      border-top: 1px solid var(--border);
     }
 
-    /* ── DRIVE CHART ── */
-    #drive-chart-wrap { overflow-x:auto; }
-    #drive-chart      { height:55px; min-width:320px; }
-    .drive-bar-label  { font-size:7px; }
-    .drive-bar-score  { font-size:7px; }
+    /* ── QUICK LINKS: 2-col grid ── */
+    #links-grid { grid-template-columns: repeat(2, 1fr); }
 
-    /* ── TRAFFIC MAP ── */
-    #trafficmap-svg-wrap { overflow-x:auto; }
-    #trafficmap-svg      { max-width:100%; }
-    .tm-legend      { gap:8px; }
-    .tm-legend-item { font-size:8px; }
-    .tm-swatch      { width:14px; }
+    /* ── SCENIC CAMERAS: 2-col grid ── */
+    #scenic-grid { grid-template-columns: repeat(2, 1fr); }
+    .cam-cell img { height: 85px; }
+    .cam-cell-ph  { height: 85px; }
+    .cam-cell-label { font-size: 7px; }
 
     /* ── GENERAL ── */
-    .panel-title   { font-size:9px; }
-    .refresh-ts    { font-size:8px; }
-    .incident-item { padding:5px 8px; }
-    .sfd-item      { padding:5px 8px; }
+    .panel-header { padding: 5px 8px; }
+    .panel-title  { font-size: 8px; }
 
   }
 </style>
