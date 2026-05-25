@@ -777,6 +777,7 @@
 // ╚══════════════════════════════════════════════════════════╝
 const CONFIG = {
   WSDOT_KEY:      '9086eb9c-b743-432c-a9ca-86e160d0d780',
+  TICKETMASTER_KEY: 'EqgsmyF0kcYqZSX1w3tHMFtAVo1kTn9X', 
   OBA_KEY:        'TEST',          // register at developer.onebusaway.org for higher limits
   SUPABASE_URL:   '',              // https://scsdstpabzkiqnvsskts.supabase.co/rest/v1/
   SUPABASE_ANON_KEY: '',           // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjc2RzdHBhYnpraXFudnNza3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTUxNzcsImV4cCI6MjA5NTI5MTE3N30.HMo41UCsWsCwk75GxoujLcIlwlZDhXPNnLZ1x7K8VV8paste your Supabase anon/public key here
@@ -1546,19 +1547,98 @@ async function fetchEvents() {
     `Refreshed ${ts()} · ${all.length} home event${all.length !== 1 ? 's' : ''} found`;
 }
 
-function getSportEmoji(team, title = '') {
-  const s = ((team.name || '') + ' ' + (team.sport || '') + ' ' + (team.league || '') + ' ' + title).toLowerCase();
-  if (/nfl|football|seahawk/.test(s))                          return '🏈';
-  if (/mlb|baseball|mariner/.test(s))                         return '⚾';
-  if (/nhl|hockey|kraken/.test(s))                            return '🏒';
-  if (/mls|soccer|sounder/.test(s))                           return '⚽';
-  if (/wnba|nba|basketball|storm|sonic/.test(s))              return '🏀';
-  if (/concert|tour|\blive\b|music|fest(ival)?/.test(s))      return '🎤';
-  if (/comedy|standup|stand-up/.test(s))                      return '🎭';
-  if (/wrestl|wwe/.test(s))                                   return '🤼';
-  if (/boxing|mma|ufc/.test(s))                               return '🥊';
-  if (/rodeo|circus|family show/.test(s))                     return '🎪';
+function getSportEmoji(ev) {
+  const segment = (ev._segment || ev.team?.sport  || '').toLowerCase();
+  const genre   = (ev._genre   || ev.team?.league || '').toLowerCase();
+  const title   = ((ev._eventName || ev.team?.name || '') + ' ' + (ev.opponent || '')).toLowerCase();
+
+  // Ticketmaster segment + genre (checked first — explicit classification)
+  if (segment === 'sports') {
+    if (genre === 'baseball')   return '⚾';
+    if (genre === 'basketball') return '🏀';
+    if (genre === 'football')   return '🏈';
+    if (genre === 'hockey')     return '🏒';
+    if (genre === 'soccer')     return '⚽';
+  }
+  if (segment === 'music')                              return '🎤';
+  if (segment === 'arts & theatre')                     return '🎭';
+  if (segment === 'comedy' || genre === 'comedy')       return '😂';
+  if (genre === 'wrestling' || genre === 'wwe')         return '🤼';
+  if (genre === 'boxing' || genre === 'mma' || genre === 'ufc') return '🥊';
+  if (genre === 'family')                               return '🎪';
+
+  // ESPN team-based fallback (keyword scan on name + opponent)
+  if (/nfl|football|seahawk/.test(title))              return '🏈';
+  if (/mlb|baseball|mariner/.test(title))              return '⚾';
+  if (/nhl|hockey|kraken/.test(title))                 return '🏒';
+  if (/mls|soccer|sounder/.test(title))                return '⚽';
+  if (/wnba|nba|basketball|storm|sonic/.test(title))   return '🏀';
+  if (/concert|tour|\blive\b|music|fest/.test(title))  return '🎤';
+  if (/comedy|standup|stand-up/.test(title))           return '😂';
+  if (/wrestl|wwe/.test(title))                        return '🤼';
+  if (/boxing|mma|ufc/.test(title))                    return '🥊';
+  if (/rodeo|circus|family show/.test(title))          return '🎪';
   return '🎟️';
+}
+
+async function fetchTicketmaster() {
+  if (!CONFIG.TICKETMASTER_KEY) return;
+  const now  = new Date();
+  const end  = new Date(now.getTime() + 14 * 86400000);
+  const fmt  = d => d.toISOString().split('T')[0];
+  const url  = `https://app.ticketmaster.com/discovery/v2/events.json` +
+    `?apikey=${CONFIG.TICKETMASTER_KEY}` +
+    `&city=Seattle&stateCode=WA&radius=15&unit=miles` +
+    `&size=20&sort=date,asc` +
+    `&startDateTime=${fmt(now)}T00:00:00Z` +
+    `&endDateTime=${fmt(end)}T23:59:59Z`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const raw  = data?._embedded?.events || [];
+    if (!raw.length) return;
+
+    // Build dedup key set from current ESPN events (date + first 12 chars of venue, lowercased)
+    const espnOnly = eventsData.filter(e => e._source !== 'ticketmaster');
+    const espnKeys = new Set(
+      espnOnly.map(e => `${fmt(e.date)}|${(e.venue || '').toLowerCase().slice(0, 12)}`)
+    );
+
+    const newEvents = [];
+    for (const ev of raw) {
+      const localDate = ev.dates?.start?.localDate;
+      const localTime = ev.dates?.start?.localTime || '00:00:00';
+      if (!localDate) continue;
+      const date = new Date(`${localDate}T${localTime}`);
+      if (isNaN(date) || date < now || date > end) continue;
+
+      const venueName = ev._embedded?.venues?.[0]?.name || '';
+      const dupeKey   = `${localDate}|${venueName.toLowerCase().slice(0, 12)}`;
+      if (espnKeys.has(dupeKey)) continue;
+
+      const segment = ev.classifications?.[0]?.segment?.name || '';
+      const genre   = ev.classifications?.[0]?.genre?.name   || '';
+      newEvents.push({
+        date,
+        team:     { name: ev.name, color: '#3d3560', impact: 'medium', sport: segment, league: genre },
+        opponent: '',
+        venue:    venueName,
+        _source:  'ticketmaster',
+        _segment:  segment,
+        _genre:    genre,
+        _eventName: ev.name,
+      });
+    }
+
+    eventsData = [...espnOnly, ...newEvents].sort((a, b) => a.date - b.date);
+    renderEvents(eventsData);
+    const tsEl = document.getElementById('events-ts');
+    if (tsEl) tsEl.textContent =
+      `Refreshed ${ts()} · ${eventsData.length} event${eventsData.length !== 1 ? 's' : ''} found`;
+  } catch(e) {
+    console.warn('[Ticketmaster] fetch failed:', e.message);
+  }
 }
 
 function renderEvents(events) {
@@ -1603,7 +1683,7 @@ function renderEvents(events) {
         </div>
         <div class="event-bar" style="background:${ev.team.color}"></div>
         <div class="event-body">
-          <div class="event-matchup">${getSportEmoji(ev.team, ev.opponent)} ${ev.team.name} vs. ${ev.opponent}</div>
+          <div class="event-matchup">${getSportEmoji(ev)} ${ev._source === 'ticketmaster' ? ev._eventName : `${ev.team.name} vs. ${ev.opponent}`}</div>
           <div class="event-sub">${ev.venue} &nbsp;&middot;&nbsp; ${time}</div>
         </div>
         <div class="event-badge ${bCls}">${impact}</div>
@@ -2649,6 +2729,7 @@ function init() {
   fetchTravelTimes();
   fetchScenicCams();
   fetchEvents();
+  fetchTicketmaster();
   fetchSFD();
   fetchSeismic();
   fetchVolcano();
@@ -2661,7 +2742,8 @@ function init() {
   setInterval(fetchIncidents,   CONFIG.REFRESH_INCIDENTS_MS);
   setInterval(fetchFerry,       CONFIG.REFRESH_FERRY_MS);
   setInterval(fetchSFD,         5 * 60 * 1000);               // SFD feed updates every 5 min
-  setInterval(fetchEvents,      60 * 60 * 1000);               // schedule rarely changes
+  setInterval(fetchEvents,         60 * 60 * 1000);            // schedule rarely changes
+  setInterval(fetchTicketmaster,   60 * 60 * 1000);            // Ticketmaster — same cadence
   setInterval(fetchTide,      10 * 60 * 1000);
   setInterval(fetchTransit,   90 * 1000);
   setInterval(refreshAllCams,  60 * 1000);       // refresh all cam images every 60s
