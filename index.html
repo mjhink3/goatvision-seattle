@@ -2172,6 +2172,7 @@ function generateOpsBrief() {
 // ╚══════════════════════════════════════════════════════════╝
 let _seismicQuakes   = null;
 let _volcanoStatuses = null;
+let _volcanoNote     = null;
 
 function seismicAgo(ms) {
   const s = Math.floor((Date.now() - ms) / 1000);
@@ -2244,6 +2245,9 @@ function renderSeismic() {
       </div>`;
     }
     html += `</div>`;
+    if (_volcanoNote) {
+      html += `<div style="padding:5px 12px 8px;font-size:9px;color:var(--green);letter-spacing:0.04em">&#9432; ${_volcanoNote}</div>`;
+    }
   } else {
     html += `<div class="loading-msg" style="padding:12px">Loading volcano data&hellip;</div>`;
   }
@@ -2275,28 +2279,33 @@ async function fetchSeismic() {
 
 async function fetchVolcano() {
   const TARGETS = ['Mount Rainier', 'Mount Baker', 'Mount St. Helens'];
-  const url = `https://volcanoes.usgs.gov/vhp/updates/volcano_updates.json`;
+  const useStaticFallback = () => {
+    _volcanoNote     = 'Check volcanoes.usgs.gov for current status';
+    _volcanoStatuses = TARGETS.map(name => ({ name, alert_level: 'Normal', aviation_color: 'GREEN', pub_date: null }));
+    renderSeismic();
+    document.getElementById('seismic-ts').textContent = `Volcano data unavailable — showing last-known normal status`;
+  };
   try {
-    const res = await fetch(url);
+    const res = await fetch('https://volcanoes.usgs.gov/vsc/api/volcanoInfo/');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const list = Array.isArray(data) ? data : (data.updates || data.volcanoes || Object.values(data));
+    const list = Array.isArray(data) ? data : Object.values(data);
+    _volcanoNote     = null;
     _volcanoStatuses = TARGETS.map(target => {
-      const match = list.find(v => (v.name || v.volcano_name || '').toLowerCase().includes(target.toLowerCase()));
+      const match = list.find(v =>
+        (v.name || v.volcanoName || v.volcano_name || '').toLowerCase().includes(target.toLowerCase())
+      );
       return match
-        ? { name: target, alert_level: match.alert_level || match.alert || '—', aviation_color: match.aviation_color || match.color || '—', pub_date: match.pub_date || match.updated || null }
+        ? { name: target,
+            alert_level:    match.alert_level    || match.alertLevel    || match.alert || 'Normal',
+            aviation_color: match.aviation_color || match.aviationColor || match.color || 'GREEN',
+            pub_date:       match.pub_date || match.updated || match.lastUpdate || null }
         : { name: target, alert_level: 'Normal', aviation_color: 'GREEN', pub_date: null };
     });
     renderSeismic();
     document.getElementById('seismic-ts').textContent = `Refreshed ${ts()}`;
   } catch(e) {
-    _volcanoStatuses = [
-      { name:'Mount Rainier',    alert_level:'—', aviation_color:'—', pub_date:null },
-      { name:'Mount Baker',      alert_level:'—', aviation_color:'—', pub_date:null },
-      { name:'Mount St. Helens', alert_level:'—', aviation_color:'—', pub_date:null },
-    ];
-    renderSeismic();
-    document.getElementById('seismic-ts').textContent = `Volcano fetch failed: ${e.message}`;
+    useStaticFallback();
   }
 }
 
