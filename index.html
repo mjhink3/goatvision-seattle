@@ -556,14 +556,14 @@
         <circle cx="365" cy="168" r="6" fill="#0d0b1e" stroke="#2a2252" stroke-width="1.5"/>
 
         <!-- Highway labels -->
-        <text x="130" y="20"  font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">I-5</text>
+        <text x="108" y="20"  font-family="monospace" font-size="8" fill="#7744f2" font-weight="700" text-anchor="end">I-5</text>
         <text x="238" y="103" font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">SR-520</text>
         <text x="238" y="183" font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">I-90</text>
         <text x="370" y="70"  font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">I-405</text>
 
         <!-- City markers -->
         <circle cx="125" cy="16" r="3" fill="#635882"/>
-        <text x="133" y="20" font-family="monospace" font-size="9" fill="#8a7faa">Lynnwood / Everett</text>
+        <text x="133" y="29" font-family="monospace" font-size="9" fill="#8a7faa">Lynnwood / Everett</text>
 
         <circle cx="125" cy="138" r="6" fill="#7744f2"/>
         <text x="80"  y="133" font-family="monospace" font-size="11" fill="#f0ecff" font-weight="700">Seattle</text>
@@ -2335,10 +2335,11 @@ function renderSeismic() {
       const alertCls  = volcanoSevClass(v.alert_level);
       const colorCls  = volcanoSevClass(v.aviation_color);
       const updated   = v.pub_date ? new Date(v.pub_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+      const volcIcon = (v.alert_level && v.alert_level !== 'Normal') ? '🌋' : '⛰️';
       html += `<div class="volcano-cell">
-        <div class="volcano-name">${v.name}</div>
+        <div class="volcano-name">${volcIcon} ${v.name}</div>
         <div class="volcano-alert ${alertCls}">${v.alert_level || '—'}</div>
-        <div class="volcano-avcode ${colorCls}">&#9992; ${v.aviation_color || '—'}</div>
+        <div class="volcano-avcode ${colorCls}">${v.aviation_color || '—'}</div>
         <div class="volcano-updated">Updated ${updated}</div>
       </div>`;
     }
