@@ -777,7 +777,6 @@
 // ╚══════════════════════════════════════════════════════════╝
 const CONFIG = {
   WSDOT_KEY:      '9086eb9c-b743-432c-a9ca-86e160d0d780',
-  TICKETMASTER_KEY: 'EqgsmyF0kcYqZSX1w3tHMFtAVo1kTn9X', 
   OBA_KEY:        'TEST',          // register at developer.onebusaway.org for higher limits
   SUPABASE_URL:   '',              // https://scsdstpabzkiqnvsskts.supabase.co/rest/v1/
   SUPABASE_ANON_KEY: '',           // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjc2RzdHBhYnpraXFudnNza3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTUxNzcsImV4cCI6MjA5NTI5MTE3N30.HMo41UCsWsCwk75GxoujLcIlwlZDhXPNnLZ1x7K8VV8paste your Supabase anon/public key here
@@ -810,6 +809,9 @@ const CITY_CONFIG = {
   // Airport (FAA NAS Status XML — IATA code used to match <ARPT> nodes)
   airportCode:     'SEA',
   airportName:     'SEA-TAC',
+
+  // Ticketmaster Discovery API — developer.ticketmaster.com
+  ticketmasterKey: 'EqgsmyF0kcYqZSX1w3tHMFtAVo1kTn9X',
 
   // SFD / 911 dispatch — Seattle Open Data (Socrata)
   sfdUrl:          'https://data.seattle.gov/resource/kzjm-xkqj.json',
@@ -1582,12 +1584,12 @@ function getSportEmoji(ev) {
 }
 
 async function fetchTicketmaster() {
-  if (!CONFIG.TICKETMASTER_KEY) return;
+  if (!CITY_CONFIG.ticketmasterKey) return;
   const now  = new Date();
   const end  = new Date(now.getTime() + 14 * 86400000);
   const fmt  = d => d.toISOString().split('T')[0];
   const url  = `https://app.ticketmaster.com/discovery/v2/events.json` +
-    `?apikey=${CONFIG.TICKETMASTER_KEY}` +
+    `?apikey=${CITY_CONFIG.ticketmasterKey}` +
     `&city=Seattle&stateCode=WA&radius=15&unit=miles` +
     `&size=20&sort=date,asc` +
     `&startDateTime=${fmt(now)}T00:00:00Z` +
