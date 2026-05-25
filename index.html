@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOATvision Seattle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #07060f;
+    --bg2:         #0d0b1e;
+    --bg3:         #131028;
+    --bg4:         #1c1838;
+    --border:      #2a2252;
+    --blue:        #7744f2;
+    --blue-dim:    #3d1a9e;
+    --amber:       #f0a500;
+    --red:         #e63946;
+    --green:       #3dd62a;
+    --text:        #cdc6e8;
+    --text-dim:    #635882;
+    --text-bright: #f0ecff;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --gv-purple: #7744f2;
+    --gv-green:  #3dd62a;
+  }
+
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--mono); font-size:12px; line-height:1.4; overflow-x:hidden; }
+
+  /* ── HEADER ── */
+  #header {
+    background: linear-gradient(180deg, #0f0528 0%, #09071a 55%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  #header-brand { display:flex; flex-direction:column; gap:0; line-height:1; }
+  .brand-line1 { display:flex; align-items:baseline; }
+  .brand-goat   { font-size:20px; font-weight:700; letter-spacing:0.04em; color:#f0ecff; }
+  .brand-vision { font-size:20px; font-weight:300; font-style:italic; color:var(--gv-purple); }
+  .brand-tm     { font-size:8px; color:var(--text-dim); vertical-align:super; margin-left:2px; }
+  .brand-seattle{ font-size:10px; font-weight:700; letter-spacing:0.35em; color:var(--gv-green); text-transform:uppercase; margin-top:3px; }
+  .brand-tagline{ font-size:8px; letter-spacing:0.18em; color:var(--text-dim); margin-top:2px; text-transform:uppercase; }
+  #header .header-right { display:flex; gap:18px; align-items:center; font-size:11px; color:var(--text-dim); }
+  #header .header-right span { display:flex; align-items:center; gap:4px; }
+  .dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .dot-green { background:var(--green); box-shadow:0 0 4px var(--green); }
+  .dot-amber { background:var(--amber); box-shadow:0 0 4px var(--amber); }
+  .dot-red   { background:var(--red);   box-shadow:0 0 4px var(--red);   }
+  .dot-gray  { background:var(--text-dim); }
+  #sys-time { font-size:13px; color:var(--text-bright); font-weight:600; letter-spacing:0.05em; }
+
+  /* ── QUOTE STRIP ── */
+  #quote-strip {
+    background: linear-gradient(90deg,#0d0b22,#130e2e,#0d0b22);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 18px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; color: var(--text-dim); font-style: italic;
+  }
+  #quote-strip .q-mark { color:var(--gv-purple); font-size:16px; font-style:normal; flex-shrink:0; }
+  #quote-strip .q-attr { color:var(--gv-green); font-style:normal; font-weight:600; }
+
+  /* ── LAYOUT ── */
+  #main { padding:10px 12px; display:grid; gap:10px; }
+
+  /* ── PANELS ── */
+  .panel { background:var(--bg2); border:1px solid var(--border); }
+  .panel-header {
+    background:var(--bg3); border-bottom:1px solid var(--border);
+    padding:6px 10px; display:flex; align-items:center; justify-content:space-between;
+    font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-dim);
+  }
+  .panel-title { color:var(--blue); display:flex; align-items:center; gap:5px; }
+  .panel-icon  { font-style:normal; font-size:12px; }
+  .refresh-ts  { font-size:10px; color:var(--text-dim); font-weight:400; letter-spacing:0; }
+
+  /* ── CONDITIONS STRIP ── */
+  #conditions-content { display:flex; flex-wrap:wrap; padding:0; }
+  .cond-cell {
+    flex:1; min-width:110px; padding:10px 14px;
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column; gap:3px;
+  }
+  .cond-cell:last-child { border-right:none; }
+  .cond-label { font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-dim); font-weight:500; }
+  .cond-value { font-size:22px; font-weight:700; color:var(--text-bright); letter-spacing:-0.02em; }
+  .cond-value.small-val { font-size:15px; }
+  .cond-unit  { font-size:11px; color:var(--text-dim); }
+  .cond-sub   { font-size:10px; color:var(--text-dim); }
+  .sev-green  { color:var(--green)  !important; }
+  .sev-amber  { color:var(--amber)  !important; }
+  .sev-red    { color:var(--red)    !important; }
+  .sev-bg-green { border-top:2px solid var(--green); }
+  .sev-bg-amber { border-top:2px solid var(--amber); }
+  .sev-bg-red   { border-top:2px solid var(--red);   }
+
+  /* ── DRIVE WINDOW ── */
+  #drive-summary { padding:8px 10px; background:var(--bg4); border-bottom:1px solid var(--border); font-size:11px; color:var(--text); line-height:1.6; }
+  #drive-summary strong { color:var(--text-bright); }
+  #drive-summary .best  { color:var(--green); font-weight:600; }
+  #drive-summary .worst { color:var(--red);   font-weight:600; }
+  #drive-chart-wrap { padding:10px; overflow-x:auto; }
+  #drive-chart { display:flex; align-items:flex-end; gap:3px; height:80px; min-width:600px; padding-bottom:20px; position:relative; }
+  .drive-bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; height:100%; justify-content:flex-end; position:relative; }
+  .drive-bar { width:100%; min-height:2px; transition:all 0.3s; cursor:default; }
+  .drive-bar-label { position:absolute; bottom:-18px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--text-dim); white-space:nowrap; }
+  .drive-bar-score { font-size:8px; color:var(--text-dim); text-align:center; position:absolute; top:-14px; left:50%; transform:translateX(-50%); white-space:nowrap; }
+  .drive-bar.best-window  { box-shadow:0 0 6px var(--green); }
+  .drive-bar.worst-window { box-shadow:0 0 6px var(--red); }
+
+  /* ── TWO-COL MID GRID ── */
+  #mid-grid { display:grid; grid-template-columns:1fr 340px; gap:10px; }
+
+  /* ── INCIDENTS ── */
+  #incidents-list { max-height:320px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .incident-item { padding:8px 10px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:80px 1fr; gap:6px 10px; align-items:start; }
+  .incident-item:last-child { border-bottom:none; }
+  .incident-sev { font-size:9px; font-weight:700; letter-spacing:0.1em; padding:2px 5px; text-transform:uppercase; text-align:center; border:1px solid; }
+  .sev-high   { color:var(--red);   border-color:var(--red);   background:rgba(230,57,70,0.1); }
+  .sev-medium { color:var(--amber); border-color:var(--amber); background:rgba(240,165,0,0.1); }
+  .sev-low    { color:var(--green); border-color:var(--green); background:rgba(61,214,42,0.1); }
+  .incident-desc { font-size:11px; color:var(--text-bright); }
+  .incident-meta { font-size:9px; color:var(--text-dim); margin-top:2px; }
+  .incident-road { font-size:10px; font-weight:600; color:var(--blue); }
+
+  /* ── FERRY ── */
+  .ferry-route { padding:10px; border-bottom:1px solid var(--border); }
+  .ferry-route:last-child { border-bottom:none; }
+  .ferry-route-name { font-size:11px; font-weight:700; color:var(--text-bright); letter-spacing:0.04em; margin-bottom:6px; }
+  .ferry-departures  { display:flex; flex-direction:column; gap:4px; }
+  .ferry-dep { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:var(--bg3); border-left:2px solid var(--blue-dim); }
+  .ferry-dep.delayed   { border-left-color:var(--amber); }
+  .ferry-dep.cancelled { border-left-color:var(--red); opacity:0.8; }
+  .ferry-time { font-size:14px; font-weight:700; color:var(--text-bright); }
+  .ferry-status { font-size:9px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; }
+  .ferry-status.on-time  { color:var(--green); }
+  .ferry-status.delayed  { color:var(--amber); }
+  .ferry-status.cancelled{ color:var(--red);   }
+  .ferry-vessel { font-size:9px; color:var(--text-dim); }
+
+  /* ── EVENTS ── */
+  #events-list { max-height:360px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .event-multiday { padding:5px 12px; background:rgba(230,57,70,0.08); border-bottom:1px solid rgba(230,57,70,0.28); font-size:9px; color:var(--red); font-weight:700; letter-spacing:0.12em; display:flex; align-items:center; gap:6px; }
+  .event-item { padding:8px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .event-item:last-child { border-bottom:none; }
+  .event-date-col { min-width:46px; text-align:center; flex-shrink:0; }
+  .event-date-day { font-size:22px; font-weight:700; color:var(--text-bright); line-height:1; }
+  .event-date-mon { font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); }
+  .event-date-dow { font-size:9px; color:var(--text-dim); margin-top:1px; }
+  .event-bar { width:3px; align-self:stretch; min-height:38px; border-radius:2px; flex-shrink:0; }
+  .event-body { flex:1; min-width:0; }
+  .event-matchup { font-size:11px; font-weight:700; color:var(--text-bright); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .event-sub { font-size:9px; color:var(--text-dim); margin-top:2px; }
+  .event-badge { font-size:8px; font-weight:700; letter-spacing:0.08em; padding:2px 6px; text-transform:uppercase; flex-shrink:0; border:1px solid; }
+  .ebadge-severe { color:var(--red);   border-color:var(--red);   background:rgba(230,57,70,0.12); }
+  .ebadge-high   { color:var(--amber); border-color:var(--amber); background:rgba(240,165,0,0.12); }
+  .ebadge-med    { color:var(--blue);  border-color:var(--blue);  background:rgba(119,68,242,0.10); }
+
+  /* ── EXTRAS ROW (Coffee / Tide / Bicycle) ── */
+  #extras-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+
+  /* Coffee */
+  .coffee-demand-score { font-size:36px; font-weight:700; line-height:1; }
+  .coffee-level { font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; }
+  .coffee-quip  { font-size:10px; color:var(--text-dim); margin-top:4px; font-style:italic; }
+  .coffee-shops-list { margin-top:8px; }
+  .coffee-shop-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--border); font-size:10px; }
+  .coffee-shop-row:last-child { border-bottom:none; }
+  .coffee-shop-name { color:var(--text-bright); font-weight:600; }
+  .coffee-shop-hood { color:var(--text-dim); font-size:9px; }
+  .coffee-wait      { font-size:9px; font-weight:700; }
+
+  /* Tide */
+  .tide-current { font-size:30px; font-weight:700; line-height:1; color:var(--text-bright); }
+  .tide-unit    { font-size:12px; color:var(--text-dim); }
+  .tide-trend   { font-size:11px; margin-top:4px; }
+  .tide-table   { margin-top:8px; }
+  .tide-row     { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--border); font-size:10px; }
+  .tide-row:last-child { border-bottom:none; }
+  .tide-type    { font-weight:700; font-size:10px; }
+
+  /* Bicycle */
+  .bike-score-big { font-size:36px; font-weight:700; line-height:1; }
+  .bike-label     { font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; margin-top:2px; }
+  .bike-verdict   { font-size:10px; color:var(--text-dim); margin-top:4px; font-style:italic; }
+  .bike-factors   { margin-top:8px; }
+  .bike-factor-row{ display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid var(--border); font-size:10px; }
+  .bike-factor-row:last-child { border-bottom:none; }
+  .bike-factor-name{ color:var(--text-dim); }
+  .bike-pips      { letter-spacing:2px; }
+
+  /* ── LINK LIGHT RAIL ── */
+  #transit-content { overflow:hidden; }
+  .transit-cols-grid { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; min-height:200px; overflow-x:auto; }
+  .transit-route-col { border-right:1px solid var(--border); min-width:180px; }
+  .transit-route-col:last-child { border-right:none; }
+  .transit-route-hdr { display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--bg3); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1; }
+  .transit-badge { font-size:9px; font-weight:700; padding:2px 8px; color:#fff; white-space:nowrap; }
+  .transit-route-long { font-size:9px; color:var(--text-dim); }
+  .transit-dir-label { font-size:8px; letter-spacing:0.15em; text-transform:uppercase; color:var(--blue); font-weight:700; padding:4px 10px 3px; background:var(--bg4); border-bottom:1px solid var(--border); }
+  .transit-stops-scroll { max-height:400px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .transit-stop-row { display:flex; align-items:center; justify-content:space-between; padding:4px 10px; border-bottom:1px solid var(--border); gap:8px; }
+  .transit-stop-row:last-child { border-bottom:none; }
+  .transit-stop-name { font-size:10px; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .transit-stop-arrs { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+  .transit-mins       { font-size:10px; font-weight:600; color:var(--text-dim); white-space:nowrap; }
+  .transit-mins.mins-now  { color:var(--green); font-size:11px; }
+  .transit-mins.mins-soon { color:var(--amber); }
+  .transit-no-arr     { font-size:10px; color:var(--text-dim); }
+  .transit-sep        { font-size:8px; color:var(--border); }
+  .transit-sched      { font-size:7px; color:var(--text-dim); vertical-align:super; }
+  .transit-stop-row.transit-stop-key .transit-stop-name { color:var(--text-bright); font-weight:700; }
+  .transit-stop-row.transit-stop-key { background:rgba(119,68,242,0.09); }
+  .transit-footer { padding:5px 10px; font-size:9px; color:var(--text-dim); border-top:1px solid var(--border); }
+
+  /* ── TRAVEL TIMES ── */
+  #tt-filters { padding:6px 10px; display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--border); }
+  .tt-filter-btn {
+    font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;
+    padding:3px 8px; background:var(--bg3); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; transition:all 0.15s;
+  }
+  .tt-filter-btn:hover, .tt-filter-btn.active { background:var(--blue-dim); border-color:var(--blue); color:var(--text-bright); }
+  #tt-list { max-height:420px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .tt-row { display:grid; grid-template-columns:52px 1fr auto auto 56px; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border); transition:background 0.1s; }
+  .tt-row:last-child { border-bottom:none; }
+  .tt-row:hover { background:var(--bg3); }
+  .tt-tag  { font-size:9px; font-weight:700; letter-spacing:0.05em; color:var(--blue); white-space:nowrap; }
+  .tt-name { font-size:10px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tt-cur  { font-size:17px; font-weight:700; color:var(--text-bright); text-align:right; white-space:nowrap; }
+  .tt-cur-unit { font-size:9px; color:var(--text-dim); font-weight:400; }
+  .tt-avg  { font-size:9px; color:var(--text-dim); text-align:right; white-space:nowrap; }
+  .tt-badge { font-size:9px; font-weight:700; letter-spacing:0.05em; padding:2px 5px; text-align:center; border-radius:2px; white-space:nowrap; }
+  .tt-ok   { background:rgba(61,214,42,0.12);  color:var(--green); }
+  .tt-warn { background:rgba(240,165,0,0.12);  color:var(--amber); }
+  .tt-bad  { background:rgba(230,57,70,0.12);  color:var(--red);   }
+  .tt-group-header { padding:4px 10px; font-size:9px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--blue); background:var(--bg3); border-bottom:1px solid var(--border); }
+
+  /* ── SCENIC CAMERAS GRID ── */
+  #scenic-grid { display:grid; grid-template-columns:repeat(3,1fr); }
+  .cam-cell { position:relative; overflow:hidden; background:var(--bg4); border-top:1px solid var(--border); cursor:pointer; }
+  .cam-cell:nth-child(-n+3) { border-top:none; }
+  .cam-cell:not(:nth-child(3n+1)) { border-left:1px solid var(--border); }
+  .cam-cell img { width:100%; height:140px; object-fit:cover; display:block; transition:opacity 0.2s; }
+  .cam-cell img:hover { opacity:0.85; }
+  .cam-cell-ph { width:100%; height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--text-dim); font-size:9px; }
+  .cam-cell-label { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(7,6,15,0.88)); padding:16px 7px 5px; font-size:8px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--text-bright); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #scenic-footer { display:flex; align-items:center; gap:8px; padding:5px 10px; border-top:1px solid var(--border); }
+  .scenic-btn { font-family:var(--mono); font-size:9px; padding:2px 8px; background:var(--bg4); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; }
+  .scenic-btn:hover { border-color:var(--blue); color:var(--text-bright); }
+  /* Lightbox */
+  #cam-lightbox { display:none; position:fixed; inset:0; background:rgba(7,6,15,0.93); z-index:200; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
+  #cam-lightbox.open { display:flex; }
+  #cam-lb-img { max-width:92vw; max-height:80vh; object-fit:contain; border:1px solid var(--border); }
+  #cam-lb-label { font-size:10px; color:var(--text-dim); letter-spacing:0.1em; }
+  #cam-lb-close { font-family:var(--mono); font-size:11px; padding:4px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; }
+  #cam-lb-close:hover { border-color:var(--blue); color:var(--text-bright); }
+
+  /* ── TRAFFIC MAP ── */
+  #trafficmap-svg-wrap { padding:12px; background:var(--bg2); }
+  #trafficmap-svg { width:100%; max-width:100%; display:block; }
+  .tm-legend { display:flex; gap:16px; padding:6px 12px; border-top:1px solid var(--border); }
+  .tm-legend-item { display:flex; align-items:center; gap:5px; font-size:9px; color:var(--text-dim); }
+  .tm-swatch { width:22px; height:4px; border-radius:2px; }
+
+  /* ── ERROR / LOADING ── */
+  .loading-msg, .error-msg { padding:20px; text-align:center; font-size:11px; }
+  .loading-msg { color:var(--text-dim); }
+  .error-msg   { color:var(--red); }
+
+  /* ── SCROLLBARS ── */
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); }
+
+  /* ── CONFIG NOTICE ── */
+  #config-notice { background:rgba(240,165,0,0.08); border:1px solid rgba(240,165,0,0.3); padding:8px 12px; font-size:10px; color:var(--amber); display:flex; align-items:center; gap:8px; }
+  #config-notice a { color:var(--amber); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ HEADER ═══ -->
+<div id="header">
+  <div id="header-brand">
+    <div class="brand-line1">
+      <span class="brand-goat">GOAT</span><span class="brand-vision">vision</span><sup class="brand-tm">&#8482;</sup>
+    </div>
+    <div class="brand-seattle">Seattle</div>
+    <div class="brand-tagline">See &middot; Plan &middot; Move</div>
+  </div>
+  <div class="header-right">
+    <span><span class="dot dot-green" id="weather-dot"></span> &#9729; Weather</span>
+    <span><span class="dot dot-gray"  id="traffic-dot"></span> &#9888; Alerts</span>
+    <span><span class="dot dot-gray"  id="ferry-dot"></span> &#9972; Ferries</span>
+    <span><span class="dot dot-gray"  id="transit-dot"></span> &#128650; Link Rail</span>
+    <span id="sys-time">--:--:--</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════ QUOTE STRIP ═══ -->
+<div id="quote-strip">
+  <span class="q-mark">&#8220;</span>
+  <span id="quote-text" style="flex:1">Loading&hellip;</span>
+</div>
+
+<!-- ═══════════════════════════════════════════ MAIN ═══ -->
+<div id="main">
+
+  <!-- Config notice -->
+  <div id="config-notice" style="display:none">
+    &#9888; WSDOT key not set. Set <code>WSDOT_KEY</code> in the CONFIG block.
+  </div>
+
+  <!-- ── CONDITIONS STRIP ── -->
+  <div class="panel" id="conditions-strip">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#9729;</span> Current Conditions — Seattle</span>
+      <span class="refresh-ts" id="weather-ts">—</span>
+    </div>
+    <div id="conditions-content"><div class="loading-msg">Fetching weather…</div></div>
+  </div>
+
+  <!-- ── DRIVE WINDOW ── -->
+  <div class="panel" id="drive-window">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128663;</span> 12-Hour Drive Quality Window</span>
+      <span class="refresh-ts" id="drive-ts">—</span>
+    </div>
+    <div id="drive-summary"><span class="loading-msg">Calculating…</span></div>
+    <div id="drive-chart-wrap"><div id="drive-chart"></div></div>
+  </div>
+
+  <!-- ── MID GRID ── -->
+  <div id="mid-grid">
+
+    <!-- Incidents -->
+    <div class="panel" id="incidents-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#9888;</span> Active Incidents &amp; Alerts</span>
+        <span class="refresh-ts" id="incidents-ts">—</span>
+      </div>
+      <div id="incidents-list"><div class="loading-msg">Loading incidents…</div></div>
+    </div>
+
+    <!-- Ferry -->
+    <div class="panel" id="ferry-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#9972;</span> WSF Ferry Status</span>
+        <span class="refresh-ts" id="ferry-ts">—</span>
+      </div>
+      <div id="ferry-content"><div class="loading-msg">Loading ferry data…</div></div>
+    </div>
+
+  </div><!-- /mid-grid -->
+
+  <!-- ── UPCOMING EVENTS ── -->
+  <div class="panel" id="events-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128197;</span> Game Day &amp; Major Events — Next 14 Days</span>
+      <span class="refresh-ts" id="events-ts">—</span>
+    </div>
+    <div id="events-list"><div class="loading-msg">Loading events…</div></div>
+  </div>
+
+  <!-- ── EXTRAS GRID (Coffee / Tide / Bicycle) ── -->
+  <div id="extras-grid">
+
+    <div class="panel" id="coffee-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#9749;</span> Seattle Coffee Index</span>
+        <span class="refresh-ts" id="coffee-ts">—</span>
+      </div>
+      <div id="coffee-content" style="padding:10px"><div class="loading-msg">Calculating…</div></div>
+    </div>
+
+    <div class="panel" id="tide-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#8767;</span> Puget Sound Tide</span>
+        <span class="refresh-ts" id="tide-ts">—</span>
+      </div>
+      <div id="tide-content" style="padding:10px"><div class="loading-msg">Loading tide data…</div></div>
+    </div>
+
+    <div class="panel" id="bike-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#128690;</span> Bicycle Conditions</span>
+        <span class="refresh-ts" id="bike-ts">—</span>
+      </div>
+      <div id="bike-content" style="padding:10px"><div class="loading-msg">Calculating…</div></div>
+    </div>
+
+  </div><!-- /extras-grid -->
+
+  <!-- ── LINK LIGHT RAIL ── -->
+  <div class="panel" id="transit-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128650;</span> Link Light Rail — All Stations</span>
+      <span class="refresh-ts" id="transit-ts">—</span>
+    </div>
+    <div id="transit-content"><div class="loading-msg">Connecting to OneBusAway…</div></div>
+  </div>
+
+  <!-- ── TRAVEL TIMES ── -->
+  <div class="panel" id="traveltimes-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128739;</span> Highway Travel Times</span>
+      <span class="refresh-ts" id="tt-ts">—</span>
+    </div>
+    <div id="tt-filters">
+      <button class="tt-filter-btn active" data-road="ALL">All</button>
+      <button class="tt-filter-btn" data-road="I-5">I-5</button>
+      <button class="tt-filter-btn" data-road="I-90">I-90</button>
+      <button class="tt-filter-btn" data-road="SR-520">SR-520</button>
+      <button class="tt-filter-btn" data-road="I-405">I-405</button>
+    </div>
+    <div id="tt-list"><div class="loading-msg">Loading travel times…</div></div>
+  </div>
+
+  <!-- ── SCENIC CAMERAS GRID ── -->
+  <div class="panel" id="scenic-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128247;</span> Live Camera Feeds — Puget Sound &amp; Ferry Terminals</span>
+      <span class="refresh-ts" id="scenic-ts">—</span>
+    </div>
+    <div id="scenic-grid"><div class="loading-msg" style="grid-column:1/-1;padding:20px">Loading camera feeds…</div></div>
+    <div id="scenic-footer">
+      <button class="scenic-btn" onclick="refreshAllCams()">&#8635; Refresh All</button>
+      <span style="font-size:9px;color:var(--text-dim)" id="scenic-auto-label">Auto-refreshes every 60s &nbsp;·&nbsp; Click any image to expand</span>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="cam-lightbox" onclick="closeLightbox()">
+    <img id="cam-lb-img" src="" alt="">
+    <div id="cam-lb-label"></div>
+    <button id="cam-lb-close" onclick="closeLightbox()">&#10005; Close</button>
+  </div>
+
+  <!-- ── TRAFFIC MAP ── -->
+  <div class="panel" id="trafficmap-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128205;</span> Seattle Metro Traffic Flow</span>
+      <span class="refresh-ts" id="trafficmap-ts">Updates with travel times</span>
+    </div>
+    <div id="trafficmap-svg-wrap">
+      <svg id="trafficmap-svg" viewBox="0 0 580 310" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+        <rect width="580" height="310" fill="#07060f"/>
+        <defs>
+          <pattern id="mapgrid" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M30 0L0 0 0 30" fill="none" stroke="rgba(100,80,200,0.05)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="580" height="310" fill="url(#mapgrid)"/>
+        <!-- Puget Sound water -->
+        <path d="M0,0 L72,0 L72,120 Q65,148 72,175 L72,310 L0,310 Z" fill="rgba(15,30,120,0.22)"/>
+        <!-- Lake Washington -->
+        <rect x="400" y="88" width="11" height="130" fill="rgba(15,30,120,0.18)" rx="4"/>
+        <!-- Lake Sammamish -->
+        <rect x="462" y="118" width="7" height="58" fill="rgba(15,30,120,0.12)" rx="3"/>
+
+        <!-- I-5: vertical x=125 -->
+        <line x1="125" y1="8"   x2="125" y2="302" stroke="#15103a" stroke-width="8" stroke-linecap="round"/>
+        <line id="seg-i5-n" x1="125" y1="8"   x2="125" y2="155" stroke="#2a2252" stroke-width="5" stroke-linecap="round"/>
+        <line id="seg-i5-s" x1="125" y1="155" x2="125" y2="302" stroke="#2a2252" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- SR-520: horizontal y=108 -->
+        <line x1="125" y1="108" x2="440" y2="108" stroke="#15103a" stroke-width="7" stroke-linecap="round"/>
+        <line id="seg-520"  x1="125" y1="108" x2="440" y2="108" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- I-90: horizontal y=168 -->
+        <line x1="125" y1="168" x2="452" y2="168" stroke="#15103a" stroke-width="7" stroke-linecap="round"/>
+        <line id="seg-i90-e" x1="125" y1="168" x2="365" y2="168" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <line id="seg-i90-b" x1="365" y1="168" x2="452" y2="168" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- I-405: vertical x=365 -->
+        <line x1="365" y1="58"  x2="365" y2="258" stroke="#15103a" stroke-width="7" stroke-linecap="round"/>
+        <line id="seg-405-n" x1="365" y1="58"  x2="365" y2="168" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <line id="seg-405-s" x1="365" y1="168" x2="365" y2="258" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- Intersections -->
+        <circle cx="125" cy="108" r="6" fill="#0d0b1e" stroke="#2a2252" stroke-width="1.5"/>
+        <circle cx="125" cy="168" r="6" fill="#0d0b1e" stroke="#2a2252" stroke-width="1.5"/>
+        <circle cx="365" cy="108" r="6" fill="#0d0b1e" stroke="#2a2252" stroke-width="1.5"/>
+        <circle cx="365" cy="168" r="6" fill="#0d0b1e" stroke="#2a2252" stroke-width="1.5"/>
+
+        <!-- Highway labels -->
+        <text x="130" y="20"  font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">I-5</text>
+        <text x="238" y="103" font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">SR-520</text>
+        <text x="238" y="183" font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">I-90</text>
+        <text x="370" y="70"  font-family="monospace" font-size="8" fill="#7744f2" font-weight="700">I-405</text>
+
+        <!-- City markers -->
+        <circle cx="125" cy="16" r="3" fill="#635882"/>
+        <text x="133" y="20" font-family="monospace" font-size="9" fill="#8a7faa">Lynnwood / Everett</text>
+
+        <circle cx="125" cy="138" r="6" fill="#7744f2"/>
+        <text x="80"  y="133" font-family="monospace" font-size="11" fill="#f0ecff" font-weight="700">Seattle</text>
+
+        <circle cx="125" cy="228" r="3" fill="#635882"/>
+        <text x="133" y="232" font-family="monospace" font-size="9" fill="#8a7faa">SeaTac ✈</text>
+
+        <circle cx="125" cy="298" r="3" fill="#635882"/>
+        <text x="133" y="301" font-family="monospace" font-size="9" fill="#8a7faa">Tacoma</text>
+
+        <circle cx="440" cy="108" r="3" fill="#635882"/>
+        <text x="446" y="112" font-family="monospace" font-size="9" fill="#8a7faa">Redmond</text>
+
+        <circle cx="365" cy="138" r="6" fill="#3dd62a"/>
+        <text x="372" y="158" font-family="monospace" font-size="11" fill="#f0ecff" font-weight="700">Bellevue</text>
+
+        <circle cx="365" cy="251" r="3" fill="#635882"/>
+        <text x="372" y="255" font-family="monospace" font-size="9" fill="#8a7faa">Renton</text>
+
+        <circle cx="452" cy="168" r="3" fill="#635882"/>
+        <text x="458" y="172" font-family="monospace" font-size="9" fill="#8a7faa">Issaquah</text>
+
+        <!-- Legend -->
+        <rect x="10" y="256" width="104" height="48" fill="rgba(7,6,15,0.88)" rx="3" stroke="#2a2252" stroke-width="1"/>
+        <line x1="18" y1="270" x2="42" y2="270" stroke="#3dd62a" stroke-width="4" stroke-linecap="round"/>
+        <text x="48" y="273" font-family="monospace" font-size="8" fill="#8a7faa">On Time</text>
+        <line x1="18" y1="284" x2="42" y2="284" stroke="#f0a500" stroke-width="4" stroke-linecap="round"/>
+        <text x="48" y="287" font-family="monospace" font-size="8" fill="#8a7faa">Slow</text>
+        <line x1="18" y1="298" x2="42" y2="298" stroke="#e63946" stroke-width="4" stroke-linecap="round"/>
+        <text x="48" y="301" font-family="monospace" font-size="8" fill="#8a7faa">Heavy Delay</text>
+      </svg>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ═══════════════════════════════════════════ SCRIPT ═══ -->
+<script>
+'use strict';
+
+// ╔══════════════════════════════════════════════════════════╗
+//  CONFIG
+// ╚══════════════════════════════════════════════════════════╝
+const CONFIG = {
+  WSDOT_KEY: '9086eb9c-b743-432c-a9ca-86e160d0d780',
+  OBA_KEY:   'TEST',          // register at developer.onebusaway.org for higher limits
+  LAT: 47.6062,
+  LON: -122.3321,
+  REFRESH_WEATHER_MS:   5 * 60 * 1000,
+  REFRESH_TT_MS:        2 * 60 * 1000,
+  REFRESH_INCIDENTS_MS: 2 * 60 * 1000,
+  REFRESH_FERRY_MS:     2 * 60 * 1000,
+};
+
+// ╔══════════════════════════════════════════════════════════╗
+//  CORS PROXY CHAIN (required for WSDOT APIs from file://)
+// ╚══════════════════════════════════════════════════════════╝
+const PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest=',
+];
+
+async function wsdotFetch(url) {
+  let lastErr;
+  for (const proxy of PROXIES) {
+    try {
+      const res = await fetch(proxy + encodeURIComponent(url));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      return JSON.parse(text);
+    } catch (e) { lastErr = e; }
+  }
+  try { const r = await fetch(url); return await r.json(); } catch (e) { lastErr = e; }
+  throw new Error(`All proxies failed: ${lastErr?.message}`);
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  UTILITIES
+// ╚══════════════════════════════════════════════════════════╝
+function ts(d = new Date()) {
+  return d.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function minsAgo(date) {
+  const s = Math.floor((Date.now()-date)/1000);
+  return s < 60 ? `${s}s ago` : `${Math.floor(s/60)}m ${s%60}s ago`;
+}
+function setDot(id, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'dot';
+  if (color==='green')  el.classList.add('dot-green');
+  else if (color==='amber') el.classList.add('dot-amber');
+  else if (color==='red')   el.classList.add('dot-red');
+  else el.classList.add('dot-gray');
+}
+function parseDotNetDate(s) {
+  const m = (s||'').match(/\d+/); return m ? new Date(parseInt(m[0])) : null;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  SYSTEM CLOCK
+// ╚══════════════════════════════════════════════════════════╝
+function startClock() {
+  const el = document.getElementById('sys-time');
+  const tick = () => { el.textContent = ts(); };
+  tick(); setInterval(tick, 1000);
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  DAILY QUOTE
+// ╚══════════════════════════════════════════════════════════╝
+const SEATTLE_QUOTES = [
+  { text:"The earth does not belong to us; we belong to the earth.", attr:"Chief Si'ahl (Chief Seattle), Duwamish Leader, 1854" },
+  { text:"Work hard. Have fun. Make history.", attr:"Jeff Bezos, Amazon Founder — Seattle" },
+  { text:"It's fine to celebrate success, but it is more important to heed the lessons of failure.", attr:"Bill Gates, Microsoft Co-founder — Redmond, WA" },
+  { text:"Knowledge speaks, but wisdom listens.", attr:"Jimi Hendrix, Seattle-born Guitar Legend" },
+  { text:"I'd rather be hated for who I am than loved for who I am not.", attr:"Kurt Cobain, Nirvana — Aberdeen, WA" },
+  { text:"Be like water, my friend.", attr:"Bruce Lee — trained at UW Seattle" },
+  { text:"The separation is in the preparation.", attr:"Russell Wilson, Seattle Seahawks" },
+  { text:"We are not in the coffee business serving people. We are in the people business serving coffee.", attr:"Howard Schultz, Starbucks — Seattle" },
+  { text:"Whatever we do to the web of life, we do to ourselves.", attr:"Chief Si'ahl (Chief Seattle)" },
+  { text:"If you double the number of experiments you do per year, you double your inventiveness.", attr:"Jeff Bezos, Amazon — Seattle" },
+  { text:"Your most unhappy customers are your greatest source of learning.", attr:"Bill Gates, Microsoft — Redmond, WA" },
+  { text:"I've always thought that a big laugh is a really loud noise from the soul saying, 'Ain't that the truth.'", attr:"Quincy Jones, Seattle-raised Music Legend" },
+  { text:"Come as you are.", attr:"Nirvana — Seattle, 1991" },
+  { text:"Dream more than others think practical. Expect more than others think possible.", attr:"Howard Schultz, Starbucks — Seattle" },
+  { text:"To improve is to change; to be perfect is to change often.", attr:"Ichiro Suzuki, Seattle Mariners Legend" },
+  { text:"A goal is not always meant to be reached. It often serves simply as something to aim at.", attr:"Bruce Lee — University of Washington, Seattle" },
+  { text:"Every day is a great day to be a Seahawk.", attr:"Pete Carroll, Seattle Seahawks" },
+  { text:"Rain is just confetti from the sky.", attr:"Seattle Wisdom" },
+  { text:"The salmon don't care what you think of the rain.", attr:"Pacific Northwest Proverb" },
+  { text:"We are all visitors to this time, this place. We are just passing through.", attr:"Chief Si'ahl — Duwamish, Seattle" },
+];
+
+function setDailyQuote() {
+  const now   = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const doy   = Math.floor((now - start) / 86400000);
+  const q     = SEATTLE_QUOTES[doy % SEATTLE_QUOTES.length];
+  document.getElementById('quote-text').innerHTML =
+    `&#8220;${q.text}&#8221; &nbsp;<span class="q-attr">— ${q.attr}</span>`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  WEATHER CODE HELPERS
+// ╚══════════════════════════════════════════════════════════╝
+const WMO_DESC = {
+  0:'Clear',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
+  45:'Fog',48:'Icy Fog',
+  51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',
+  61:'Light Rain',63:'Rain',65:'Heavy Rain',66:'Freezing Rain',67:'Heavy Freezing Rain',
+  71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',
+  80:'Light Showers',81:'Showers',82:'Violent Showers',
+  85:'Snow Showers',86:'Heavy Snow Showers',
+  95:'Thunderstorm',96:'T-Storm+Hail',99:'T-Storm Heavy Hail',
+};
+const WMO_ICON = {
+  0:'☀',1:'🌤',2:'⛅',3:'☁',45:'🌫',48:'🌫',
+  51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',66:'🌨',67:'🌨',
+  71:'🌨',73:'❄',75:'❄',77:'❄',80:'🌦',81:'🌧',82:'⛈',85:'🌨',86:'🌨',
+  95:'⛈',96:'⛈',99:'⛈',
+};
+function wmoSeverity(c) {
+  if ([51,53,55,61,63,65,66,67].includes(c)) return 0.5;
+  if ([71,73,75,77].includes(c)) return 0.9;
+  if ([80,81,82,85,86,95,96,99].includes(c)) return 1.0;
+  if ([45,48].includes(c)) return 0.3;
+  return 0;
+}
+function wmoDesc(c) { return WMO_DESC[c] || `Code ${c}`; }
+function wmoIcon(c) { return WMO_ICON[c] || '?'; }
+function windSev(mph) { return mph>=30?1:mph>=20?0.7:mph>=10?0.3:0; }
+function sevClass(s)  { return s>=0.6?'sev-red':s>=0.3?'sev-amber':'sev-green'; }
+
+// ╔══════════════════════════════════════════════════════════╗
+//  WEATHER + CONDITIONS
+// ╚══════════════════════════════════════════════════════════╝
+let weatherData = null;
+
+async function fetchWeather() {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.LAT}&longitude=${CONFIG.LON}` +
+    `&current=temperature_2m,precipitation_probability,wind_speed_10m,weather_code,visibility,cloud_cover` +
+    `&hourly=temperature_2m,precipitation_probability,wind_speed_10m,weather_code` +
+    `&daily=sunrise,sunset` +
+    `&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=13&forecast_days=1&timezone=America%2FLos_Angeles`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    weatherData = data;
+    renderConditions(data);
+    renderDriveWindow(data);
+    renderCoffee(data);
+    renderBike(data);
+    setDot('weather-dot','green');
+    const now = ts();
+    document.getElementById('weather-ts').textContent = `Refreshed ${now}`;
+    document.getElementById('drive-ts').textContent    = `Refreshed ${now}`;
+    document.getElementById('coffee-ts').textContent   = `Refreshed ${now}`;
+    document.getElementById('bike-ts').textContent     = `Refreshed ${now}`;
+  } catch(e) {
+    setDot('weather-dot','red');
+    document.getElementById('conditions-content').innerHTML = `<div class="error-msg">&#9888; Weather failed: ${e.message}</div>`;
+  }
+}
+
+function renderConditions(data) {
+  const c = data.current;
+  const code   = c.weather_code;
+  const temp   = Math.round(c.temperature_2m);
+  const wind   = Math.round(c.wind_speed_10m);
+  const precip = c.precipitation_probability ?? 0;
+  const vis    = c.visibility != null ? (c.visibility/1609).toFixed(1) : '—';
+  const clouds = c.cloud_cover ?? 0;
+
+  const sunrise = data.daily?.sunrise?.[0];
+  const sunset  = data.daily?.sunset?.[0];
+  const fmtTime = s => { if(!s) return '—'; const d=new Date(s); return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}); };
+  const sunriseStr = fmtTime(sunrise);
+  const sunsetStr  = fmtTime(sunset);
+
+  let rainierVal, rainierSub, rainierSev;
+  if (wmoSeverity(code)>=0.5 || clouds>75) { rainierVal='Hidden';  rainierSub='Sky obscured'; rainierSev='sev-red';  }
+  else if (clouds>40)                       { rainierVal='Maybe';   rainierSub=`${clouds}% clouds`; rainierSev='sev-amber'; }
+  else                                      { rainierVal='Visible'; rainierSub=`${clouds}% clouds`; rainierSev='sev-green'; }
+
+  const ov = precip*0.4/100 + windSev(wind)*0.3 + wmoSeverity(code)*0.3;
+  const cells = [
+    { label:'Conditions',  value:wmoIcon(code),  sub:wmoDesc(code),   sev:sevClass(ov) },
+    { label:'Temperature', value:`${temp}`,       unit:'°F',  sub:'&nbsp;', sev:temp<=32?'sev-amber':'sev-green' },
+    { label:'Wind',        value:wind,            unit:' mph', sub:wind>=25?'HIGH WIND':wind>=15?'Breezy':'Calm', sev:wind>=30?'sev-red':wind>=20?'sev-amber':'sev-green' },
+    { label:'Precip',      value:`${precip}`,     unit:'%',   sub:precip>=70?'Likely':precip>=40?'Possible':'Unlikely', sev:precip>=70?'sev-red':precip>=40?'sev-amber':'sev-green' },
+    { label:'Visibility',  value:vis,             unit:' mi',  sub:parseFloat(vis)<1?'Very Low':parseFloat(vis)<3?'Reduced':'Clear', sev:parseFloat(vis)<1?'sev-red':parseFloat(vis)<3?'sev-amber':'sev-green' },
+    { label:'Rainier?',    value:rainierVal,      sub:rainierSub, sev:rainierSev, smallVal:true },
+    { label:'Sunrise',     value:sunriseStr,      sub:`Sets ${sunsetStr}`, sev:'sev-green', smallVal:true },
+  ];
+
+  document.getElementById('conditions-content').innerHTML = cells.map(cc => `
+    <div class="cond-cell ${(cc.sev||'').replace('sev-','sev-bg-')}">
+      <div class="cond-label">${cc.label}</div>
+      <div class="cond-value ${cc.sev||''} ${cc.smallVal?'small-val':''}">${cc.value}<span class="cond-unit">${cc.unit||''}</span></div>
+      <div class="cond-sub">${cc.sub}</div>
+    </div>`).join('');
+}
+
+function renderDriveWindow(data) {
+  const hourly = data.hourly;
+  const now    = new Date();
+  const idx    = hourly.time.findIndex(t => { const d=new Date(t); return d.getHours()>=now.getHours()&&d.getDate()===now.getDate(); });
+  if (idx===-1) return;
+  const hours = [];
+  for (let i=idx; i<idx+12&&i<hourly.time.length; i++) {
+    const d = new Date(hourly.time[i]);
+    const p=hourly.precipitation_probability[i]??0, w=hourly.wind_speed_10m[i]??0, co=hourly.weather_code[i]??0;
+    const score = Math.round((p/100)*40 + windSev(w)*30 + wmoSeverity(co)*30);
+    hours.push({ label:d.toLocaleTimeString('en-US',{hour:'numeric',hour12:true}).replace(':00','').replace(' ',''), p,w,code:co,score });
+  }
+  const max=Math.max(...hours.map(h=>h.score)), min=Math.min(...hours.map(h=>h.score));
+  const bi=hours.findIndex(h=>h.score===min), wi=hours.findIndex(h=>h.score===max);
+  let sum='';
+  if (min<=20) sum+=`<span class="best">Best: ${hours[bi].label}</span> — score ${hours[bi].score}/100 (${wmoDesc(hours[bi].code)}, ${Math.round(hours[bi].w)}mph, ${hours[bi].p}% precip). `;
+  if (max>=40)  sum+=`<span class="worst">Avoid: ${hours[wi].label}</span> — score ${hours[wi].score}/100.`;
+  else          sum+=`<span class="best">Conditions look good all window.</span> Max: ${max}/100.`;
+  document.getElementById('drive-summary').innerHTML = sum;
+  document.getElementById('drive-chart').innerHTML = hours.map((h,i) => {
+    const bh=Math.max(4,Math.round((h.score/100)*58));
+    const col=h.score<=20?'var(--green)':h.score<=50?'var(--amber)':'var(--red)';
+    const ex=i===bi?'best-window':i===wi?'worst-window':'';
+    return `<div class="drive-bar-wrap">
+      <div class="drive-bar-score">${i===bi?'★':i===wi?'▲':h.score}</div>
+      <div class="drive-bar ${ex}" style="height:${bh}px;background:${col};opacity:${i===bi||i===wi?1:0.75}" title="${h.label}: score ${h.score}"></div>
+      <div class="drive-bar-label">${h.label}</div>
+    </div>`;
+  }).join('');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  INCIDENTS
+// ╚══════════════════════════════════════════════════════════╝
+async function fetchIncidents() {
+  const url = `https://www.wsdot.wa.gov/Traffic/api/HighwayAlerts/HighwayAlertsREST.svc/GetAlertsAsJson?AccessCode=${CONFIG.WSDOT_KEY}`;
+  try {
+    const data = await wsdotFetch(url);
+    renderIncidents(Array.isArray(data) ? data : (data.Alerts || []));
+    setDot('traffic-dot','green');
+    document.getElementById('incidents-ts').textContent = `Refreshed ${ts()}`;
+  } catch(e) {
+    setDot('traffic-dot','red');
+    document.getElementById('incidents-list').innerHTML = `<div class="error-msg">&#9888; Incidents failed: ${e.message}</div>`;
+  }
+}
+
+function parseSev(a) {
+  const p=(a.EventCategory||'').toLowerCase(), t=(a.EventType||'').toLowerCase();
+  if (p.includes('closure')||t.includes('closure')||p.includes('serious')) return 'high';
+  if (p.includes('construction')||t.includes('accident')||p.includes('crash')) return 'medium';
+  return 'low';
+}
+
+function renderIncidents(alerts) {
+  if (!alerts||alerts.length===0) {
+    document.getElementById('incidents-list').innerHTML='<div class="loading-msg">No active incidents</div>'; return;
+  }
+  const order={high:0,medium:1,low:2};
+  const sorted=[...alerts].sort((a,b)=>order[parseSev(a)]-order[parseSev(b)]);
+  document.getElementById('incidents-list').innerHTML = sorted.slice(0,30).map(a => {
+    const sev=parseSev(a), road=a.RoadName||'—', dir=a.DirectionText||'';
+    const desc=a.HeadlineDescription||a.ExtendedDescription||'No description';
+    const loc=[a.StartRoadwayLocation?.Description,a.EndRoadwayLocation?.Description].filter(Boolean).join(' → ')||road;
+    let startTime='';
+    if (a.StartTime){const m=a.StartTime.match(/\d+/);if(m)startTime=new Date(parseInt(m[0])).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});}
+    return `<div class="incident-item">
+      <div><div class="incident-sev sev-${sev}">${sev}</div><div class="incident-road" style="margin-top:4px">${road} ${dir}</div></div>
+      <div><div class="incident-desc">${desc}</div><div class="incident-meta">${loc}${startTime?` · ${startTime}`:''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  FERRY STATUS (WSDOT vessel locations via CORS proxy)
+// ╚══════════════════════════════════════════════════════════╝
+const FERRY_ROUTE_KEYWORDS = [
+  { name:'Mukilteo / Clinton',                     keywords:['mukilteo','clinton'] },
+  { name:'Seattle / Bainbridge Island',             keywords:['seattle','bainbridge island'] },
+  { name:'Fauntleroy / Vashon Island / Southworth', keywords:['fauntleroy','vashon island','southworth'] },
+  { name:'Point Defiance / Tahlequah',              keywords:['point defiance','tahlequah'] },
+];
+
+async function fetchFerry() {
+  try {
+    const data = await wsdotFetch(
+      `https://www.wsdot.wa.gov/ferries/api/vessels/rest/vessellocations?apiaccesscode=${CONFIG.WSDOT_KEY}`
+    );
+    if (!Array.isArray(data)) throw new Error('Non-array response');
+    renderFerry(data);
+    setDot('ferry-dot','green');
+    document.getElementById('ferry-ts').textContent = `Refreshed ${ts()}`;
+  } catch(e) {
+    setDot('ferry-dot','amber');
+    document.getElementById('ferry-content').innerHTML = `<div class="error-msg">&#9888; Ferry fetch failed: ${e.message}</div>`;
+  }
+}
+
+function matchRoute(vessel) {
+  const dep = (vessel.DepartingTerminalName||'').toLowerCase();
+  const arr = (vessel.ArrivingTerminalName||'').toLowerCase();
+  const combined = dep + ' ' + arr;
+  for (const route of FERRY_ROUTE_KEYWORDS) {
+    if (route.keywords.every(k => combined.includes(k))) return route.name;
+  }
+  return null;
+}
+
+function renderFerry(vessels) {
+  const byRoute = {};
+  FERRY_ROUTE_KEYWORDS.forEach(r => { byRoute[r.name] = []; });
+
+  for (const v of vessels) {
+    const rname = matchRoute(v);
+    if (rname && byRoute[rname]) byRoute[rname].push(v);
+  }
+
+  let html = '';
+  for (const route of FERRY_ROUTE_KEYWORDS) {
+    const vs = byRoute[route.name];
+    let rows = '';
+    if (vs.length === 0) {
+      rows = `<div class="ferry-dep"><div><div class="ferry-time">—</div><div class="ferry-vessel">No vessel data</div></div><span class="ferry-status on-time">See wsdot.com</span></div>`;
+    } else {
+      rows = vs.map(v => {
+        const atDock   = v.AtDock || false;
+        const speed    = v.Speed  != null ? parseFloat(v.Speed).toFixed(1) : null;
+        const name     = v.VesselName || 'Vessel';
+        const dep      = v.DepartingTerminalName || '';
+        const arr      = v.ArrivingTerminalName  || '';
+
+        let timeStr='—', label='';
+        const depTime = parseDotNetDate(v.ScheduledDeparture || v.DepartingTime);
+        const arrTime = parseDotNetDate(v.ScheduledArrival  || v.ETA);
+        if (atDock && depTime)  { timeStr=depTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}); label='Departs'; }
+        else if (!atDock && arrTime) { timeStr=arrTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}); label='ETA'; }
+        else if (depTime) { timeStr=depTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}); label=''; }
+
+        const statusText  = atDock ? 'At Dock' : speed!=null ? `Underway ${speed}kn` : 'Underway';
+        const statusClass = atDock ? 'on-time' : 'delayed';
+        return `<div class="ferry-dep">
+          <div>
+            <div class="ferry-time">${label?`<span style="font-size:8px;color:var(--text-dim)">${label} </span>`:''}${timeStr}</div>
+            <div class="ferry-vessel">${name} · ${dep} → ${arr}</div>
+          </div>
+          <span class="ferry-status ${statusClass}">${statusText}</span>
+        </div>`;
+      }).join('');
+    }
+    html += `<div class="ferry-route"><div class="ferry-route-name">${route.name}</div><div class="ferry-departures">${rows}</div></div>`;
+  }
+  document.getElementById('ferry-content').innerHTML = html;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  SEATTLE EVENTS (ESPN public API — no key required)
+// ╚══════════════════════════════════════════════════════════╝
+const SEATTLE_TEAMS = [
+  { name:'Mariners', sport:'baseball',   league:'mlb',   id:'28',   color:'#00685a', venue:'T-Mobile Park',        impact:'high'   },
+  { name:'Seahawks', sport:'football',   league:'nfl',   id:'26',   color:'#69be28', venue:'Lumen Field',           impact:'high'   },
+  { name:'Sounders', sport:'soccer',     league:'usa.1', id:'9726', color:'#5d9741', venue:'Lumen Field',           impact:'high'   },
+  { name:'Kraken',   sport:'hockey',     league:'nhl',   id:'55',   color:'#68a2b9', venue:'Climate Pledge Arena',  impact:'medium' },
+  { name:'Storm',    sport:'basketball', league:'wnba',  id:'14',   color:'#2c5234', venue:'Climate Pledge Arena',  impact:'medium' },
+];
+
+async function espnFetch(url) {
+  // ESPN supports CORS natively — try direct first, proxy fallback
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch(e) {
+    return await wsdotFetch(url);
+  }
+}
+
+async function fetchEvents() {
+  const now    = new Date();
+  const cutoff = new Date(now.getTime() + 14 * 86400000);
+  const all    = [];
+
+  await Promise.allSettled(SEATTLE_TEAMS.map(async team => {
+    try {
+      const data = await espnFetch(
+        `https://site.api.espn.com/apis/site/v2/sports/${team.sport}/${team.league}/teams/${team.id}/schedule`
+      );
+      for (const ev of (data.events || [])) {
+        const d    = new Date(ev.date);
+        if (d < now || d > cutoff) continue;
+        const comp = ev.competitions?.[0];
+        if (!comp) continue;
+        // Only include home games — away games don't impact Seattle traffic
+        const mySide = comp.competitors?.find(c =>
+          String(c.id) === String(team.id) || String(c.team?.id) === String(team.id)
+        );
+        if (!mySide || mySide.homeAway !== 'home') continue;
+        const awaySide = comp.competitors?.find(c => c.homeAway === 'away');
+        all.push({
+          date:     d,
+          team,
+          opponent: awaySide?.team?.displayName || awaySide?.team?.shortDisplayName || 'TBD',
+          venue:    comp.venue?.fullName || team.venue,
+        });
+      }
+    } catch(e) { /* per-team failure is silent — team just won't appear */ }
+  }));
+
+  all.sort((a, b) => a.date - b.date);
+  renderEvents(all);
+  document.getElementById('events-ts').textContent =
+    `Refreshed ${ts()} · ${all.length} home event${all.length !== 1 ? 's' : ''} found`;
+}
+
+function renderEvents(events) {
+  if (!events.length) {
+    document.getElementById('events-list').innerHTML =
+      '<div class="loading-msg">No home events in the next 14 days.</div>';
+    return;
+  }
+
+  // Group by calendar day
+  const byDay = new Map();
+  for (const ev of events) {
+    const dk = ev.date.toDateString();
+    if (!byDay.has(dk)) byDay.set(dk, []);
+    byDay.get(dk).push(ev);
+  }
+
+  let html = '';
+  for (const dayEvs of byDay.values()) {
+    const multi = dayEvs.length > 1;
+    if (multi) {
+      const venues = [...new Set(dayEvs.map(e => e.venue.split(' ').slice(0,2).join(' ')))].join(' + ');
+      html += `<div class="event-multiday">&#9889; MULTI-EVENT DAY &mdash; ${dayEvs.length} events at ${venues} &middot; Expect elevated downtown &amp; SoDo traffic</div>`;
+    }
+    for (const ev of dayEvs) {
+      const d      = ev.date;
+      const day    = d.getDate();
+      const mon    = d.toLocaleDateString('en-US', {month:'short'}).toUpperCase();
+      const dow    = d.toLocaleDateString('en-US', {weekday:'short'}).toUpperCase();
+      const time   = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+      const impact = multi                       ? 'SEVERE'
+                   : ev.team.impact === 'high'   ? 'HIGH'
+                   :                              'MED';
+      const bCls   = multi                       ? 'ebadge-severe'
+                   : ev.team.impact === 'high'   ? 'ebadge-high'
+                   :                              'ebadge-med';
+      html += `<div class="event-item">
+        <div class="event-date-col">
+          <div class="event-date-day">${day}</div>
+          <div class="event-date-mon">${mon}</div>
+          <div class="event-date-dow">${dow}</div>
+        </div>
+        <div class="event-bar" style="background:${ev.team.color}"></div>
+        <div class="event-body">
+          <div class="event-matchup">${ev.team.name} vs. ${ev.opponent}</div>
+          <div class="event-sub">${ev.venue} &nbsp;&middot;&nbsp; ${time}</div>
+        </div>
+        <div class="event-badge ${bCls}">${impact}</div>
+      </div>`;
+    }
+  }
+
+  document.getElementById('events-list').innerHTML = html;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  COFFEE INDEX
+// ╚══════════════════════════════════════════════════════════╝
+const SEATTLE_COFFEE_SHOPS = [
+  { name:'Victrola Coffee',     hood:'Capitol Hill',   specialty:'Single origin espresso' },
+  { name:'Lighthouse Roasters', hood:'Fremont',        specialty:'Classic Pacific roasts'  },
+  { name:'Caffe Vita',          hood:'Pike/Pine',      specialty:'Caffe Vita blend'         },
+  { name:'Elm Coffee Roasters', hood:'Pioneer Square', specialty:'Light roast pour-over'    },
+  { name:'Analog Coffee',       hood:'Capitol Hill',   specialty:'Neighborhood espresso'    },
+  { name:'Stumptown Coffee',    hood:'Downtown',       specialty:'Hair Bender blend'        },
+  { name:'Milstead & Co.',      hood:'Fremont',        specialty:'Rotating guest roasters'  },
+  { name:'Fonte Coffee',        hood:'Belltown',       specialty:'Espresso bar'             },
+];
+
+function renderCoffee(data) {
+  const c     = data.current;
+  const now   = new Date();
+  const hr    = now.getHours();
+  const precip= c.precipitation_probability ?? 0;
+  const temp  = c.temperature_2m;
+  const code  = c.weather_code;
+  const dow   = now.getDay();  // 0=Sun
+
+  let demand = 50;
+  demand += wmoSeverity(code) * 30;
+  demand += (precip / 100) * 20;
+  if (temp < 45)      demand += 15;
+  else if (temp > 68) demand -= 10;
+  if (hr >= 7 && hr <= 9) demand += 20;
+  if (dow === 1)           demand += 10;
+  demand = Math.min(100, Math.max(0, Math.round(demand)));
+
+  let level, levelColor, quip;
+  if (demand >= 85)      { level='CRITICAL'; levelColor='sev-red';   quip='Every barista in the city is sweating right now.'; }
+  else if (demand >= 65) { level='ELEVATED'; levelColor='sev-amber'; quip='Lines are forming. Budget an extra five minutes.'; }
+  else if (demand >= 40) { level='MODERATE'; levelColor='sev-amber'; quip='Steady flow. Your usual spot will hook you up.'; }
+  else                   { level='NOMINAL';  levelColor='sev-green'; quip='Walk right up. The barista already knows your order.'; }
+
+  const seed = now.getDate() + now.getMonth()*31;
+  const shuffled = [...SEATTLE_COFFEE_SHOPS].sort((a,b) => {
+    const ha = (a.name.charCodeAt(0)*7+seed) % 97;
+    const hb = (b.name.charCodeAt(0)*7+seed) % 97;
+    return ha - hb;
+  });
+  const top3 = shuffled.slice(0,3);
+
+  const shopHtml = top3.map((s, i) => {
+    const wait = demand >= 70 ? (i===0?12:i===1?8:5) : demand>=40 ? (i===0?5:i===1?3:0) : 0;
+    const waitStr   = wait===0?'No wait':`~${wait} min`;
+    const waitColor = wait===0?'sev-green':wait<=5?'sev-green':wait<=10?'sev-amber':'sev-red';
+    return `<div class="coffee-shop-row">
+      <div><div class="coffee-shop-name">${i+1}. ${s.name}</div><div class="coffee-shop-hood">${s.hood}</div></div>
+      <div class="coffee-wait ${waitColor}">${waitStr}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('coffee-content').innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+      <div class="coffee-demand-score ${levelColor}">${demand}</div>
+      <div><div class="coffee-level ${levelColor}">${level}</div><div class="coffee-quip">${quip}</div></div>
+    </div>
+    <div class="coffee-shops-list">${shopHtml}</div>`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  PUGET SOUND TIDE (NOAA station 9447130)
+// ╚══════════════════════════════════════════════════════════╝
+async function fetchTide() {
+  const now      = new Date();
+  const fmt      = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  const today    = fmt(now);
+  const tomorrow = fmt(new Date(now.getTime() + 86400000));
+  const url      = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter` +
+    `?begin_date=${today}&end_date=${tomorrow}` +
+    `&station=9447130&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english` +
+    `&application=goatvision_seattle&format=json`;
+  try {
+    const data = await wsdotFetch(url);
+    if (data.error) throw new Error(data.error.message);
+    renderTide(data.predictions || []);
+    document.getElementById('tide-ts').textContent = `Refreshed ${ts()}`;
+  } catch(e) {
+    document.getElementById('tide-content').innerHTML = `<div class="error-msg">&#9888; Tide failed: ${e.message}</div>`;
+  }
+}
+
+function renderTide(preds) {
+  if (!preds.length) { document.getElementById('tide-content').innerHTML='<div class="loading-msg">No tide data</div>'; return; }
+
+  const now = new Date();
+  // Find nearest prediction to now
+  const withDates = preds.map(p => ({ ...p, dt: new Date(p.t) }));
+  const future    = withDates.filter(p => p.dt > now);
+  const past      = withDates.filter(p => p.dt <= now);
+  const lastPast  = past.length ? past[past.length-1] : null;
+  const nextFut   = future.length ? future[0] : null;
+
+  const currentFt = lastPast ? parseFloat(lastPast.v).toFixed(1) : '—';
+  const rising    = lastPast && nextFut ? parseFloat(nextFut.v) > parseFloat(lastPast.v) : null;
+  const trendStr  = rising===null?'—':rising?'▲ Rising':'▼ Falling';
+  const trendCls  = rising===null?'':rising?'sev-green':'sev-amber';
+
+  const rowsHtml = withDates.slice(0, 6).map(p => {
+    const typeStr = p.type==='H'?'▲ High':'▼ Low';
+    const typeCls = p.type==='H'?'sev-green':'sev-amber';
+    const t = p.dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    const isPast = p.dt <= now;
+    return `<div class="tide-row" style="${isPast?'opacity:0.45':''}">
+      <span class="tide-type ${typeCls}">${typeStr}</span>
+      <span>${t}</span>
+      <span style="font-weight:600;color:var(--text-bright)">${parseFloat(p.v).toFixed(1)} ft</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('tide-content').innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
+      <span class="tide-current">${currentFt}<span class="tide-unit"> ft</span></span>
+      <span class="tide-trend ${trendCls}">${trendStr}</span>
+    </div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Elliott Bay · MLLW datum</div>
+    <div class="tide-table">${rowsHtml}</div>`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  BICYCLE INDEX
+// ╚══════════════════════════════════════════════════════════╝
+function renderBike(data) {
+  const c = data.current;
+  const temp   = c.temperature_2m;
+  const wind   = c.wind_speed_10m;
+  const precip = c.precipitation_probability ?? 0;
+  const code   = c.weather_code;
+
+  const MAX = 100;
+  const tempScore  = temp>=55&&temp<=75?25:temp>=45&&temp<55?18:temp>=40&&temp<45?10:temp>75&&temp<=85?20:5;
+  const windScore  = wind<=8?25:wind<=15?18:wind<=22?10:wind<=30?5:0;
+  const precipScore= precip<=15?25:precip<=35?18:precip<=55?10:precip<=75?4:0;
+  const wxScore    = wmoSeverity(code)<=0?25:wmoSeverity(code)<=0.3?18:wmoSeverity(code)<=0.5?8:0;
+  const total = tempScore + windScore + precipScore + wxScore;
+
+  let label, color, verdict;
+  if (total>=75)      { label='GO';      color='sev-green'; verdict='Ideal conditions. Get out there.'; }
+  else if (total>=50) { label='DECENT';  color='sev-green'; verdict='Gear up and ride.'; }
+  else if (total>=30) { label='ROUGH';   color='sev-amber'; verdict='Doable with rain gear.'; }
+  else                { label='STAY IN'; color='sev-red';   verdict='Wait it out.'; }
+
+  function pips(score, max) {
+    const pct = score/max;
+    if (pct>=0.75) return `<span class="sev-green bike-pips">●●●</span>`;
+    if (pct>=0.40) return `<span class="sev-amber bike-pips">●●○</span>`;
+    if (pct>=0.10) return `<span class="sev-red   bike-pips">●○○</span>`;
+    return `<span class="sev-red bike-pips">○○○</span>`;
+  }
+
+  document.getElementById('bike-content').innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+      <div class="bike-score-big ${color}">${total}</div>
+      <div><div class="bike-label ${color}">${label}</div><div class="bike-verdict">${verdict}</div></div>
+    </div>
+    <div class="bike-factors">
+      <div class="bike-factor-row"><span class="bike-factor-name">Temperature (${Math.round(temp)}°F)</span>${pips(tempScore,25)}</div>
+      <div class="bike-factor-row"><span class="bike-factor-name">Wind (${Math.round(wind)} mph)</span>${pips(windScore,25)}</div>
+      <div class="bike-factor-row"><span class="bike-factor-name">Precip chance (${precip}%)</span>${pips(precipScore,25)}</div>
+      <div class="bike-factor-row"><span class="bike-factor-name">Sky (${wmoDesc(code)})</span>${pips(wxScore,25)}</div>
+    </div>`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  LINK LIGHT RAIL (OneBusAway Puget Sound)
+// ╚══════════════════════════════════════════════════════════╝
+const OBA_BASE = 'https://api.pugetsound.onebusaway.org/api/where';
+
+async function obaFetch(path) {
+  const key = CONFIG.OBA_KEY || 'TEST';
+  const sep = path.includes('?') ? '&' : '?';
+  const res = await fetch(`${OBA_BASE}${path}${sep}key=${key}`);
+  if (!res.ok) throw new Error(`OBA HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data.data) throw new Error('OBA no data field');
+  return data.data;
+}
+
+let _linkRoutes = null;
+let _linkStopCache = new Map();
+
+async function getLinkRoutes() {
+  if (_linkRoutes && _linkRoutes.length > 0) return _linkRoutes;
+  const d = await obaFetch('/routes-for-agency/40.json');
+  _linkRoutes = (d.list||[])
+    .filter(r => (r.type===0||r.type===1) && /line|link/i.test((r.shortName||'')+' '+(r.longName||'')))
+    .sort((a,b) => (a.shortName||'').localeCompare(b.shortName||''));
+  return _linkRoutes;
+}
+
+async function getLinkStops(routeId) {
+  if (_linkStopCache.has(routeId)) return _linkStopCache.get(routeId);
+  const d = await obaFetch(`/stops-for-route/${encodeURIComponent(routeId)}.json?includePolylines=false`);
+  const stopMap = new Map((d.references?.stops||[]).map(s=>[s.id,s]));
+  const dirs = (d.entry?.stopGroupings||[]).flatMap(sg =>
+    (sg.stopGroups||[]).map(g => ({
+      dirName: g.name?.name || g.id || '?',
+      stops:   (g.stopIds||[]).map(id => stopMap.get(id)).filter(Boolean).map(s=>({ id:s.id, name:s.name||s.id }))
+    }))
+  );
+  _linkStopCache.set(routeId, dirs);
+  return dirs;
+}
+
+const KEY_STATION_PATTERNS = [
+  'angle lake','seatac','sea-tac','airport',
+  'international district',"int'l dist",
+  'westlake','university street','pioneer square',
+  'capitol hill','university of washington','u district',
+  'northgate','lynnwood',
+  'mercer island',
+  'bellevue downtown','east main','spring district',
+  'overlake','redmond',
+  'tukwila','tacoma dome','stadium','sodo',
+];
+
+const LINK_COLORS = {
+  '1 Line':'#00a7e1','2 Line':'#d60027','3 Line':'#6f2c91','Tacoma Link':'#e07000',
+};
+
+async function fetchTransit() {
+  try {
+    const routes = await getLinkRoutes();
+    if (!routes.length) throw new Error('No Link routes found');
+    const routeStops = await Promise.all(routes.map(async r => {
+      try { return { route:r, directions: await getLinkStops(r.id) }; }
+      catch(e) { return { route:r, directions:[] }; }
+    }));
+
+    const keyStopIds = new Set();
+    for (const {directions} of routeStops)
+      for (const {stops} of directions)
+        for (const stop of stops) {
+          const n = (stop.name||'').toLowerCase();
+          if (KEY_STATION_PATTERNS.some(p=>n.includes(p))) keyStopIds.add(stop.id);
+        }
+
+    const arrivalMap = new Map();
+    const settled = await Promise.allSettled([...keyStopIds].map(async sid => {
+      const d = await obaFetch(`/arrivals-and-departures-for-stop/${encodeURIComponent(sid)}.json?minutesBefore=1&minutesAfter=60`);
+      const arrs = (d.entry?.arrivalsAndDepartures||[])
+        .filter(a => routes.some(r=>r.id===a.routeId))
+        .slice(0,3)
+        .map(a => {
+          const ms = a.predictedArrivalTime || a.scheduledArrivalTime || 0;
+          const mins = Math.max(0, Math.round((ms - Date.now()) / 60000));
+          return { mins, sched: !a.predictedArrivalTime };
+        });
+      return { sid, arrivals: arrs };
+    }));
+    for (const r of settled)
+      if (r.status==='fulfilled') arrivalMap.set(r.value.sid, r.value.arrivals);
+
+    renderTransit(routeStops, arrivalMap);
+    setDot('transit-dot','green');
+    document.getElementById('transit-ts').textContent = `Refreshed ${ts()}`;
+  } catch(e) {
+    setDot('transit-dot','red');
+    document.getElementById('transit-content').innerHTML = `<div class="error-msg">&#9888; Transit failed: ${e.message}</div>`;
+  }
+}
+
+function renderTransit(routeStops, arrivalMap) {
+  const colsHtml = routeStops.map(({route, directions}) => {
+    const rname = route.shortName || route.longName || route.id;
+    const color = LINK_COLORS[rname] || '#666';
+    const dirsHtml = directions.map(({dirName, stops}) => {
+      const stopsHtml = stops.map(stop => {
+        const isKey = KEY_STATION_PATTERNS.some(p=>(stop.name||'').toLowerCase().includes(p));
+        const arrs  = arrivalMap.get(stop.id) || [];
+        let arrHtml;
+        if (arrs.length) {
+          arrHtml = arrs.map((a,i) => {
+            const cls = a.mins<=1?'mins-now':a.mins<=5?'mins-soon':'';
+            const label = a.mins<=1?'NOW':`${a.mins}m`;
+            return `${i>0?'<span class="transit-sep">·</span>':''}<span class="transit-mins ${cls}">${label}${a.sched?'<sup class="transit-sched">s</sup>':''}</span>`;
+          }).join('');
+        } else if (isKey) {
+          arrHtml = `<span class="transit-no-arr sev-amber">No svc</span>`;
+        } else {
+          arrHtml = `<span class="transit-no-arr">—</span>`;
+        }
+        return `<div class="transit-stop-row ${isKey?'transit-stop-key':''}">
+          <span class="transit-stop-name">${stop.name||stop.id}</span>
+          <div class="transit-stop-arrs">${arrHtml}</div>
+        </div>`;
+      }).join('');
+      return `<div class="transit-dir-label">${dirName}</div>
+              <div class="transit-stops-scroll">${stopsHtml||'<div class="loading-msg">No stops</div>'}</div>`;
+    }).join('');
+    return `<div class="transit-route-col">
+      <div class="transit-route-hdr">
+        <span class="transit-badge" style="background:${color}">${rname}</span>
+        <span class="transit-route-long">${route.longName||''}</span>
+      </div>
+      ${dirsHtml}
+    </div>`;
+  }).join('');
+
+  document.getElementById('transit-content').innerHTML =
+    `<div class="transit-cols-grid">${colsHtml||'<div class="loading-msg" style="padding:20px">No Link routes found</div>'}</div>` +
+    `<div class="transit-footer"><sup>s</sup> = scheduled · no live prediction</div>`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  HIGHWAY TRAVEL TIMES (WSDOT — replaces broken camera API)
+// ╚══════════════════════════════════════════════════════════╝
+const TT_ROAD_MAP = {'005':'I-5','090':'I-90','520':'SR-520','405':'I-405','522':'SR-522'};
+let allTravelTimes = [];
+let ttRoadFilter   = 'ALL';
+let ttFetchedAt    = null;
+
+function ttInBbox(r) {
+  return [r.StartPoint, r.EndPoint].some(p =>
+    p && p.Latitude>=47.30 && p.Latitude<=47.85 && p.Longitude>=-122.55 && p.Longitude<=-121.60);
+}
+function ttRoadLabel(r) {
+  const rn = r.StartPoint?.RoadName || r.EndPoint?.RoadName || '';
+  return TT_ROAD_MAP[rn] || null;
+}
+function ttDir(r) {
+  const sLat=r.StartPoint?.Latitude, eLat=r.EndPoint?.Latitude;
+  const sLon=r.StartPoint?.Longitude, eLon=r.EndPoint?.Longitude;
+  if (sLat==null||eLat==null) return '';
+  const dLat=eLat-sLat, dLon=eLon-sLon;
+  return Math.abs(dLat)>=Math.abs(dLon) ? (dLat>0?'↑':'↓') : (dLon>0?'→':'←');
+}
+
+async function fetchTravelTimes() {
+  try {
+    const data = await wsdotFetch(
+      `https://www.wsdot.wa.gov/Traffic/api/TravelTimes/TravelTimesREST.svc/GetTravelTimesAsJson?AccessCode=${CONFIG.WSDOT_KEY}`
+    );
+    if (!Array.isArray(data)) throw new Error('Non-array');
+    allTravelTimes = data.filter(r => {
+      if (!ttInBbox(r)) return false;
+      if (!ttRoadLabel(r)) return false;
+      if (/\bHOV\b|\bEL\b/i.test(r.Name)) return false;
+      r._road = ttRoadLabel(r);
+      r._dir  = ttDir(r);
+      return true;
+    }).sort((a,b) => a._road.localeCompare(b._road)||a._dir.localeCompare(b._dir)||((a.StartPoint?.MilePost??0)-(b.StartPoint?.MilePost??0)));
+
+    ttFetchedAt = new Date();
+    renderTravelTimes();
+    updateTrafficMap();
+    document.getElementById('tt-ts').textContent = `Refreshed ${ts(ttFetchedAt)} · ${allTravelTimes.length} routes`;
+  } catch(e) {
+    document.getElementById('tt-list').innerHTML = `<div class="error-msg">&#9888; Travel times failed: ${e.message}</div>`;
+    document.getElementById('tt-ts').textContent = 'ERROR';
+  }
+}
+
+function renderTravelTimes() {
+  const filtered = ttRoadFilter==='ALL' ? allTravelTimes : allTravelTimes.filter(r=>r._road===ttRoadFilter);
+  if (!filtered.length) { document.getElementById('tt-list').innerHTML=`<div class="loading-msg">No routes for ${ttRoadFilter}</div>`; return; }
+
+  let html='', lastRoad=null;
+  for (const r of filtered) {
+    if (ttRoadFilter==='ALL' && r._road!==lastRoad) {
+      html+=`<div class="tt-group-header">${r._road}</div>`; lastRoad=r._road;
+    }
+    const cur=r.CurrentTime??0, avg=r.AverageTime??0, ratio=avg>0?cur/avg:1, delta=cur-avg;
+    let bc, bt;
+    if (ratio<=1.1)      { bc='tt-ok';   bt=delta<=0?`−${Math.abs(delta)}m`:'ON TIME'; }
+    else if (ratio<=1.5) { bc='tt-warn'; bt=`+${delta}m`; }
+    else                 { bc='tt-bad';  bt=`+${delta}m`; }
+    if (delta===0&&ratio<=1.1) bt='ON TIME';
+    const ud = parseDotNetDate(r.TimeUpdated);
+    const name = r.Name.replace(/\s*(HOV|EL)\s*$/i,'').trim();
+    html+=`<div class="tt-row" title="${r.Description||r.Name}${ud?' · Updated '+minsAgo(ud):''}">
+      <span class="tt-tag">${r._road} ${r._dir}</span>
+      <span class="tt-name">${name}</span>
+      <span class="tt-cur">${cur}<span class="tt-cur-unit">m</span></span>
+      <span class="tt-avg">avg ${avg}m</span>
+      <span class="tt-badge ${bc}">${bt}</span>
+    </div>`;
+  }
+  document.getElementById('tt-list').innerHTML = html;
+}
+
+document.querySelectorAll('.tt-filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tt-filter-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    ttRoadFilter = this.dataset.road;
+    renderTravelTimes();
+  });
+});
+
+// ╔══════════════════════════════════════════════════════════╗
+//  SCENIC CAMERAS — multi-box grid + click-to-expand
+// ╚══════════════════════════════════════════════════════════╝
+let scenicCams = [];
+
+async function fetchScenicCams() {
+  try {
+    const data = await wsdotFetch(
+      `https://www.wsdot.wa.gov/Traffic/api/HighwayCameras/HighwayCamerasREST.svc/GetCamerasAsJson?AccessCode=${CONFIG.WSDOT_KEY}`
+    );
+    if (!Array.isArray(data)) return;
+
+    const ferry = data.filter(c =>
+      c.IsActive && c.ImageURL &&
+      c.CameraLocation?.RoadName === 'Ferries' &&
+      (c.CameraLocation?.Latitude ?? 0) >= 47.00 &&
+      (c.CameraLocation?.Latitude ?? 0) <= 48.90
+    );
+
+    // One per terminal for variety, then fill with any remaining
+    const terminalOrder = [
+      'bainbridge','winslow','colman','seattle',
+      'mukilteo','clinton',
+      'edmonds','kingston',
+      'fauntleroy','southworth','vashon',
+      'anacortes','orcas','friday harbor','lopez','shaw',
+      'point defiance','tahlequah',
+      'port townsend','coupeville',
+    ];
+    const seen = new Set();
+    const picked = [];
+    for (const kw of terminalOrder) {
+      const cam = ferry.find(c => (c.Title||'').toLowerCase().includes(kw) && !seen.has(c.CameraID));
+      if (cam) { picked.push(cam); seen.add(cam.CameraID); }
+    }
+    for (const cam of ferry) {
+      if (!seen.has(cam.CameraID)) { picked.push(cam); seen.add(cam.CameraID); }
+    }
+
+    scenicCams = picked;
+    renderScenicGrid();
+    document.getElementById('scenic-ts').textContent = `${scenicCams.length} feeds · ${ts()}`;
+  } catch(e) {
+    document.getElementById('scenic-grid').innerHTML =
+      `<div class="error-msg" style="grid-column:1/-1">Camera feeds unavailable: ${e.message}</div>`;
+  }
+}
+
+function camLabel(cam) {
+  return (cam.Title || 'Ferry View')
+    .replace(/SR \d+ at MP [\d.]+[:\s]*/i, '')
+    .replace(/[-–] WSF\b/i, '— WSF')
+    .trim();
+}
+
+function renderScenicGrid() {
+  if (!scenicCams.length) {
+    document.getElementById('scenic-grid').innerHTML =
+      '<div class="loading-msg" style="grid-column:1/-1">No camera feeds found.</div>';
+    return;
+  }
+  document.getElementById('scenic-grid').innerHTML = scenicCams.map((cam, i) => {
+    const name = camLabel(cam);
+    return `<div class="cam-cell" onclick="openLightbox(${i})" title="Click to expand">
+      <img src="${cam.ImageURL}?_t=${Date.now()}" alt="${name}" loading="lazy"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="cam-cell-ph" style="display:none">
+        <div style="font-size:20px">&#128247;</div><div>${name}</div>
+      </div>
+      <div class="cam-cell-label">${name}</div>
+    </div>`;
+  }).join('');
+}
+
+function refreshAllCams() {
+  document.querySelectorAll('#scenic-grid .cam-cell img').forEach((img, i) => {
+    if (scenicCams[i]) {
+      img.style.display = '';
+      img.src = scenicCams[i].ImageURL + '?_t=' + Date.now();
+    }
+  });
+  document.getElementById('scenic-ts').textContent = `${scenicCams.length} feeds · ${ts()}`;
+}
+
+function openLightbox(idx) {
+  const cam = scenicCams[idx];
+  if (!cam) return;
+  const lb = document.getElementById('cam-lightbox');
+  document.getElementById('cam-lb-img').src   = cam.ImageURL + '?_t=' + Date.now();
+  document.getElementById('cam-lb-label').textContent = camLabel(cam);
+  lb.classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('cam-lightbox').classList.remove('open');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  TRAFFIC FLOW MAP  (SVG colored by Travel Times data)
+// ╚══════════════════════════════════════════════════════════╝
+function updateTrafficMap() {
+  if (!allTravelTimes.length) return;
+  function segColor(road, dir) {
+    const r = allTravelTimes.find(x=>x._road===road&&(!dir||x._dir===dir))
+           || allTravelTimes.find(x=>x._road===road);
+    if (!r) return '#2a2252';
+    const ratio=(r.AverageTime>0)?r.CurrentTime/r.AverageTime:1;
+    return ratio<=1.1?'#3dd62a':ratio<=1.5?'#f0a500':'#e63946';
+  }
+  const segs=[
+    ['seg-i5-n','I-5','↑'],['seg-i5-s','I-5','↓'],
+    ['seg-520','SR-520',null],
+    ['seg-i90-e','I-90','→'],['seg-i90-b','I-90',null],
+    ['seg-405-n','I-405','↑'],['seg-405-s','I-405','↓'],
+  ];
+  for (const [id,road,dir] of segs) {
+    const el=document.getElementById(id);
+    if (el) el.setAttribute('stroke',segColor(road,dir));
+  }
+  document.getElementById('trafficmap-ts').textContent=`Updated ${ts()} · WSDOT Travel Times`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  CONFIG NOTICE
+// ╚══════════════════════════════════════════════════════════╝
+function checkConfig() {
+  if (!CONFIG.WSDOT_KEY) document.getElementById('config-notice').style.display='flex';
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  INIT
+// ╚══════════════════════════════════════════════════════════╝
+function init() {
+  startClock();
+  setDailyQuote();
+  checkConfig();
+
+  fetchWeather();
+  fetchIncidents();
+  fetchFerry();
+  fetchTide();
+  fetchTransit();
+  fetchTravelTimes();
+  fetchScenicCams();
+  fetchEvents();
+
+  setInterval(fetchWeather,     CONFIG.REFRESH_WEATHER_MS);
+  setInterval(fetchTravelTimes, CONFIG.REFRESH_TT_MS);
+  setInterval(fetchIncidents,   CONFIG.REFRESH_INCIDENTS_MS);
+  setInterval(fetchFerry,       CONFIG.REFRESH_FERRY_MS);
+  setInterval(fetchEvents,      60 * 60 * 1000); // schedule rarely changes
+  setInterval(fetchTide,      10 * 60 * 1000);
+  setInterval(fetchTransit,   90 * 1000);
+  setInterval(refreshAllCams,  60 * 1000);       // refresh all cam images every 60s
+  setInterval(fetchScenicCams, 10 * 60 * 1000); // re-fetch full cam list every 10 min
+
+  // Keep "X ago" timestamps current
+  setInterval(() => {
+    if (ttFetchedAt) document.getElementById('tt-ts').textContent=`Refreshed ${ts(ttFetchedAt)} · ${allTravelTimes.length} routes`;
+  }, 30000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
