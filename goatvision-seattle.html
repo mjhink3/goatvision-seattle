@@ -422,6 +422,7 @@
     <span><span class="dot dot-gray"  id="ferry-dot"></span> &#9972; Ferries</span>
     <span><span class="dot dot-gray"  id="transit-dot"></span> &#128650; Link Rail</span>
     <span><span class="dot dot-gray"  id="sfd-dot"></span> &#128658; SFD</span>
+    <span><span class="dot dot-gray"  id="tm-dot"></span> &#127915; Events</span>
     <span><span class="dot dot-gray"  id="seismic-dot"></span> &#127755; Seismic</span>
     <span><span class="dot dot-gray"  id="sea-dot"></span> &#9992; SEA-TAC</span>
     <span id="sys-time">--:--:--</span>
@@ -1587,7 +1588,7 @@ function getSportEmoji(ev) {
 }
 
 async function fetchTicketmaster() {
-  if (!CONFIG.TICKETMASTER_KEY) return;
+  if (!CONFIG.TICKETMASTER_KEY) { setDot('tm-dot', 'red'); return; }
   const now = new Date();
   const end = new Date(now.getTime() + 14 * 86400000);
   const fmt = d => d.toISOString().split('T')[0];
@@ -1661,8 +1662,11 @@ async function fetchTicketmaster() {
     const tsEl = document.getElementById('events-ts');
     if (tsEl) tsEl.textContent =
       `Refreshed ${ts()} · ${eventsData.length} event${eventsData.length !== 1 ? 's' : ''} found`;
+    const nonSports = newEvents.filter(e => e._segment !== 'Sports');
+    setDot('tm-dot', nonSports.length > 0 ? 'green' : 'amber');
   } catch(e) {
     console.warn('[Ticketmaster] fetch failed:', e.message);
+    setDot('tm-dot', 'red');
   }
 }
 
