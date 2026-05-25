@@ -166,6 +166,7 @@
   .ebadge-severe { color:var(--red);   border-color:var(--red);   background:rgba(230,57,70,0.12); }
   .ebadge-high   { color:var(--amber); border-color:var(--amber); background:rgba(240,165,0,0.12); }
   .ebadge-med    { color:var(--blue);  border-color:var(--blue);  background:rgba(119,68,242,0.10); }
+  .ebadge-low    { color:var(--text-dim); border-color:var(--border); background:transparent; }
 
   /* ── EXTRAS ROW (Coffee / Tide / Bicycle) ── */
   #extras-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
@@ -619,7 +620,7 @@
   <!-- ── UPCOMING EVENTS ── -->
   <div class="panel" id="events-panel">
     <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128197;</span> Game Day &amp; Major Events — Next 14 Days</span>
+      <span class="panel-title"><span class="panel-icon">&#128197;</span> Events &amp; Game Day — Next 14 Days</span>
       <span class="refresh-ts" id="events-ts">—</span>
     </div>
     <div id="events-list"><div class="loading-msg">Loading events…</div></div>
@@ -1540,11 +1541,14 @@ async function fetchEvents() {
   }));
 
   all.sort((a, b) => a.date - b.date);
-  eventsData = all;
+  // Preserve any Ticketmaster events already in eventsData — fetchTicketmaster() may have
+  // completed before this call finished its 5 parallel ESPN fetches.
+  const tmOnly = eventsData.filter(e => e._source === 'ticketmaster');
+  eventsData = [...all, ...tmOnly].sort((a, b) => a.date - b.date);
   _brief.events = true;
-  renderEvents(all);
+  renderEvents(eventsData);
   document.getElementById('events-ts').textContent =
-    `Refreshed ${ts()} · ${all.length} home event${all.length !== 1 ? 's' : ''} found`;
+    `Refreshed ${ts()} · ${eventsData.length} event${eventsData.length !== 1 ? 's' : ''} found`;
 }
 
 function getSportEmoji(ev) {
@@ -1583,15 +1587,19 @@ function getSportEmoji(ev) {
 
 async function fetchTicketmaster() {
   if (!CONFIG.TICKETMASTER_KEY) return;
-  const now  = new Date();
-  const end  = new Date(now.getTime() + 14 * 86400000);
-  const fmt  = d => d.toISOString().split('T')[0];
-  const url  = `https://app.ticketmaster.com/discovery/v2/events.json` +
+  const now = new Date();
+  const end = new Date(now.getTime() + 14 * 86400000);
+  const fmt = d => d.toISOString().split('T')[0];
+  const url = `https://app.ticketmaster.com/discovery/v2/events.json` +
     `?apikey=${CONFIG.TICKETMASTER_KEY}` +
     `&city=Seattle&stateCode=WA&radius=15&unit=miles` +
-    `&size=20&sort=date,asc` +
+    `&size=50&sort=date,asc` +
     `&startDateTime=${fmt(now)}T00:00:00Z` +
     `&endDateTime=${fmt(end)}T23:59:59Z`;
+
+  const LARGE_VENUES = ['climate pledge', 't-mobile park', 'paramount', 'wamu theater', 'key arena', 'lumen field', 'accesso showare'];
+  const SMALL_VENUES = ['neumos', 'tractor tavern', 'crocodile', 'chop suey', 'moore theatre', 'moore theater', 'showbox', 'the showbox', 'neptune', 'triple door'];
+
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1599,7 +1607,7 @@ async function fetchTicketmaster() {
     const raw  = data?._embedded?.events || [];
     if (!raw.length) return;
 
-    // Build dedup key set from current ESPN events (date + first 12 chars of venue, lowercased)
+    // Strip stale TM events; build dedup key set from ESPN-only events
     const espnOnly = eventsData.filter(e => e._source !== 'ticketmaster');
     const espnKeys = new Set(
       espnOnly.map(e => `${fmt(e.date)}|${(e.venue || '').toLowerCase().slice(0, 12)}`)
@@ -1613,18 +1621,34 @@ async function fetchTicketmaster() {
       const date = new Date(`${localDate}T${localTime}`);
       if (isNaN(date) || date < now || date > end) continue;
 
-      const venueName = ev._embedded?.venues?.[0]?.name || '';
-      const dupeKey   = `${localDate}|${venueName.toLowerCase().slice(0, 12)}`;
+      const segment = ev.classifications?.[0]?.segment?.name  || '';
+      const genre   = ev.classifications?.[0]?.genre?.name    || '';
+      const subType = ev.classifications?.[0]?.subType?.name  || '';
+
+      // Exclude ballpark tours, flex memberships, sightseeing, and team admin events
+      if (subType === 'Sightseeing/Facility' || subType === 'Team') continue;
+      if (/\btour\b/i.test(ev.name) && /miscellaneous/i.test(segment)) continue;
+
+      const venueName  = ev._embedded?.venues?.[0]?.name || '';
+      const venueLC    = venueName.toLowerCase();
+      const dupeKey    = `${localDate}|${venueLC.slice(0, 12)}`;
       if (espnKeys.has(dupeKey)) continue;
 
-      const segment = ev.classifications?.[0]?.segment?.name || '';
-      const genre   = ev.classifications?.[0]?.genre?.name   || '';
+      // Venue-based impact for non-sports events
+      let impact = 'medium';
+      if (segment === 'Music') {
+        if (LARGE_VENUES.some(v => venueLC.includes(v)))      impact = 'high';
+        else if (SMALL_VENUES.some(v => venueLC.includes(v))) impact = 'low';
+      } else if (segment === 'Arts & Theatre' || segment === 'Comedy') {
+        impact = 'low';
+      }
+
       newEvents.push({
         date,
-        team:     { name: ev.name, color: '#3d3560', impact: 'medium', sport: segment, league: genre },
-        opponent: '',
-        venue:    venueName,
-        _source:  'ticketmaster',
+        team:      { name: ev.name, color: '#3d3560', impact, sport: segment, league: genre },
+        opponent:  '',
+        venue:     venueName,
+        _source:   'ticketmaster',
         _segment:  segment,
         _genre:    genre,
         _eventName: ev.name,
@@ -1671,9 +1695,11 @@ function renderEvents(events) {
       const time   = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
       const impact = multi                       ? 'SEVERE'
                    : ev.team.impact === 'high'   ? 'HIGH'
+                   : ev.team.impact === 'low'    ? 'LOW'
                    :                              'MED';
       const bCls   = multi                       ? 'ebadge-severe'
                    : ev.team.impact === 'high'   ? 'ebadge-high'
+                   : ev.team.impact === 'low'    ? 'ebadge-low'
                    :                              'ebadge-med';
       html += `<div class="event-item">
         <div class="event-date-col">
