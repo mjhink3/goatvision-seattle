@@ -2372,27 +2372,55 @@ async function fetchVolcano() {
 //  SEA-TAC AIRPORT STATUS (FAA NAS Status API — no key)
 // ╚══════════════════════════════════════════════════════════╝
 async function fetchSEA() {
-  const url = 'https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
-  const el  = document.getElementById('sea-content');
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
+  const FAA_URL = 'https://nasstatus.faa.gov/api/airport-status-information';
+  const el = document.getElementById('sea-content');
 
-    const xml    = new DOMParser().parseFromString(text, 'application/xml');
+  // Try direct fetch, then fall through CORS proxy chain
+  let text = null;
+  try {
+    const res = await fetch(FAA_URL, { headers: { Accept: 'application/xml, text/xml, */*' } });
+    if (res.ok) text = await res.text();
+  } catch(e) { /* CORS blocked — try proxies */ }
+
+  if (!text) {
+    for (const proxy of PROXIES) {
+      try {
+        const res = await fetch(proxy + encodeURIComponent(FAA_URL));
+        if (!res.ok) continue;
+        const t = await res.text();
+        if (t?.trim()) { text = t; break; }
+      } catch(e) { /* try next proxy */ }
+    }
+  }
+
+  if (!text?.trim()) {
+    setDot('sea-dot', 'gray');
+    el.innerHTML = `<div class="nws-no-alerts" style="flex-wrap:wrap;gap:4px">
+      <span style="color:var(--text-dim)">&#9432;</span>&nbsp;
+      FAA status unavailable. &nbsp;
+      <a href="https://nasstatus.faa.gov" target="_blank" rel="noopener"
+         style="color:var(--blue);text-decoration:underline">Check nasstatus.faa.gov</a>
+    </div>`;
+    document.getElementById('sea-ts').textContent = 'Unavailable';
+    return;
+  }
+
+  try {
+    const xml = new DOMParser().parseFromString(text, 'application/xml');
     const delays = [];
     let hasGroundStop = false;
 
     for (const dt of xml.querySelectorAll('Delay_type')) {
-      const name = dt.querySelector('Name')?.textContent?.trim() || '';
-      // Look for SEA in the airport code list for this delay type
+      const name    = dt.querySelector('Name')?.textContent?.trim() || '';
       const seaNode = [...dt.querySelectorAll('ARPT')].find(a =>
         a.textContent.trim().toUpperCase() === 'SEA'
       );
       if (!seaNode) continue;
 
-      const avgDelay     = dt.querySelector('AvgDelay')?.textContent?.trim() || '';
-      const reason       = seaNode.closest('Airport')?.querySelector('Reason')?.textContent?.trim()
+      const airportEl    = seaNode.closest('Airport');
+      const avgDelay     = airportEl?.querySelector('Avg')?.textContent?.trim()
+                        || dt.querySelector('AvgDelay')?.textContent?.trim() || '';
+      const reason       = airportEl?.querySelector('Reason')?.textContent?.trim()
                         || dt.querySelector('Reason')?.textContent?.trim() || '';
       const isGroundStop = /ground.?stop|closure/i.test(name);
       if (isGroundStop) hasGroundStop = true;
@@ -2419,7 +2447,7 @@ async function fetchSEA() {
     document.getElementById('sea-ts').textContent = `Refreshed ${ts()}`;
   } catch(e) {
     setDot('sea-dot', 'amber');
-    el.innerHTML = `<div class="error-msg">&#9888; FAA status unavailable: ${e.message}</div>`;
+    el.innerHTML = `<div class="error-msg">&#9888; FAA parse error: ${e.message}</div>`;
     document.getElementById('sea-ts').textContent = 'ERROR';
   }
 }
