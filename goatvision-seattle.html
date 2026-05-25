@@ -2273,7 +2273,6 @@ function generateOpsBrief() {
 // ╚══════════════════════════════════════════════════════════╝
 let _seismicQuakes   = null;
 let _volcanoStatuses = null;
-let _volcanoNote     = null;
 
 function seismicAgo(ms) {
   const s = Math.floor((Date.now() - ms) / 1000);
@@ -2335,21 +2334,17 @@ function renderSeismic() {
   if (_volcanoStatuses) {
     html += `<div class="volcano-grid">`;
     for (const v of _volcanoStatuses) {
-      const alertCls  = volcanoSevClass(v.alert_level);
-      const colorCls  = volcanoSevClass(v.aviation_color);
-      const updated   = v.pub_date ? new Date(v.pub_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+      const alertCls = volcanoSevClass(v.alert_level);
+      const updated  = v.pub_date ? new Date(v.pub_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
       const volcIcon = (v.alert_level && v.alert_level !== 'Normal') ? '🌋' : '⛰️';
       html += `<div class="volcano-cell">
         <div class="volcano-name">${volcIcon} ${v.name}</div>
         <div class="volcano-alert ${alertCls}">${v.alert_level || '—'}</div>
-        <div class="volcano-avcode ${colorCls}">${v.aviation_color || '—'}</div>
         <div class="volcano-updated">Updated ${updated}</div>
       </div>`;
     }
     html += `</div>`;
-    if (_volcanoNote) {
-      html += `<div style="padding:5px 12px 8px;font-size:9px;color:var(--green);letter-spacing:0.04em">&#9432; ${_volcanoNote}</div>`;
-    }
+    html += `<div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Source: USGS Volcano Hazards Program</div>`;
   } else {
     html += `<div class="loading-msg" style="padding:12px">Loading volcano data&hellip;</div>`;
   }
@@ -2382,7 +2377,6 @@ async function fetchSeismic() {
 async function fetchVolcano() {
   const TARGETS = ['Mount Rainier', 'Mount Baker', 'Mount St. Helens'];
   const useStaticFallback = () => {
-    _volcanoNote     = 'Check volcanoes.usgs.gov for current status';
     _volcanoStatuses = TARGETS.map(name => ({ name, alert_level: 'Normal', aviation_color: 'GREEN', pub_date: null }));
     renderSeismic();
     document.getElementById('seismic-ts').textContent = `Volcano data unavailable — showing last-known normal status`;
@@ -2392,7 +2386,6 @@ async function fetchVolcano() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const list = Array.isArray(data) ? data : Object.values(data);
-    _volcanoNote     = null;
     _volcanoStatuses = TARGETS.map(target => {
       const match = list.find(v =>
         (v.name || v.volcanoName || v.volcano_name || '').toLowerCase().includes(target.toLowerCase())
