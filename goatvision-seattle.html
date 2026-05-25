@@ -356,6 +356,14 @@
   .volcano-avcode{ font-size:10px; font-weight:700; letter-spacing:0.08em; margin-top:3px; }
   .volcano-updated { font-size:8px; color:var(--text-dim); margin-top:4px; }
 
+  /* ── QUICK LINKS ── */
+  #links-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border-top:1px solid var(--border); }
+  .link-item { display:flex; flex-direction:column; gap:3px; padding:10px 12px; background:var(--bg2); text-decoration:none; transition:background 0.12s; }
+  .link-item:hover { background:var(--bg3); }
+  .link-cat  { font-size:8px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--blue); }
+  .link-name { font-size:10px; color:var(--text-bright); font-weight:500; }
+  .link-item:hover .link-name { color:var(--gv-green); }
+
   /* ── ERROR / LOADING ── */
   .loading-msg, .error-msg { padding:20px; text-align:center; font-size:11px; }
   .loading-msg { color:var(--text-dim); }
@@ -414,6 +422,7 @@
     <span><span class="dot dot-gray"  id="transit-dot"></span> &#128650; Link Rail</span>
     <span><span class="dot dot-gray"  id="sfd-dot"></span> &#128658; SFD</span>
     <span><span class="dot dot-gray"  id="seismic-dot"></span> &#127755; Seismic</span>
+    <span><span class="dot dot-gray"  id="sea-dot"></span> &#9992; SEA-TAC</span>
     <span id="sys-time">--:--:--</span>
   </div>
 </div>
@@ -616,6 +625,15 @@
     <div id="events-list"><div class="loading-msg">Loading events…</div></div>
   </div>
 
+  <!-- ── SEA-TAC AIRPORT STATUS ── -->
+  <div class="panel" id="sea-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#9992;</span> Seattle-Tacoma International &mdash; Flight Status</span>
+      <span class="refresh-ts" id="sea-ts">—</span>
+    </div>
+    <div id="sea-content"><div class="loading-msg">Loading FAA status&hellip;</div></div>
+  </div>
+
   <!-- ── SFD FIRE & DISPATCH ── -->
   <div class="panel" id="sfd-panel">
     <div class="panel-header">
@@ -681,6 +699,47 @@
     <img id="cam-lb-img" src="" alt="">
     <div id="cam-lb-label"></div>
     <button id="cam-lb-close" onclick="closeLightbox()">&#10005; Close</button>
+  </div>
+
+  <!-- ── QUICK LINKS ── -->
+  <div class="panel" id="links-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128279;</span> Regional Quick Links</span>
+    </div>
+    <div id="links-grid">
+      <a class="link-item" href="https://scl.datacapable.com/map/" target="_blank" rel="noopener">
+        <span class="link-cat">Power</span>
+        <span class="link-name">Seattle City Light Outage Map</span>
+      </a>
+      <a class="link-item" href="https://www.pse.com/en/outage/outage-map" target="_blank" rel="noopener">
+        <span class="link-cat">Power</span>
+        <span class="link-name">PSE Outage Map</span>
+      </a>
+      <a class="link-item" href="https://www.seattleschools.org" target="_blank" rel="noopener">
+        <span class="link-cat">Schools</span>
+        <span class="link-name">Seattle Public Schools</span>
+      </a>
+      <a class="link-item" href="https://bsd405.org" target="_blank" rel="noopener">
+        <span class="link-cat">Schools</span>
+        <span class="link-name">Bellevue School District</span>
+      </a>
+      <a class="link-item" href="https://www.nsd.org" target="_blank" rel="noopener">
+        <span class="link-cat">Schools</span>
+        <span class="link-name">Northshore School District</span>
+      </a>
+      <a class="link-item" href="https://kingcounty.gov/metro" target="_blank" rel="noopener">
+        <span class="link-cat">Transit</span>
+        <span class="link-name">King County Metro Trip Planner</span>
+      </a>
+      <a class="link-item" href="https://wsdot.wa.gov/travel/real-time-traffic" target="_blank" rel="noopener">
+        <span class="link-cat">Traffic</span>
+        <span class="link-name">WSDOT Real-Time Traffic</span>
+      </a>
+      <a class="link-item" href="https://www.portseattle.org/sea-tac" target="_blank" rel="noopener">
+        <span class="link-cat">Airport</span>
+        <span class="link-name">Port of Seattle / Sea-Tac</span>
+      </a>
+    </div>
   </div>
 
 </div><!-- /main -->
@@ -2310,6 +2369,62 @@ async function fetchVolcano() {
 }
 
 // ╔══════════════════════════════════════════════════════════╗
+//  SEA-TAC AIRPORT STATUS (FAA NAS Status API — no key)
+// ╚══════════════════════════════════════════════════════════╝
+async function fetchSEA() {
+  const url = 'https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
+  const el  = document.getElementById('sea-content');
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+
+    const xml    = new DOMParser().parseFromString(text, 'application/xml');
+    const delays = [];
+    let hasGroundStop = false;
+
+    for (const dt of xml.querySelectorAll('Delay_type')) {
+      const name = dt.querySelector('Name')?.textContent?.trim() || '';
+      // Look for SEA in the airport code list for this delay type
+      const seaNode = [...dt.querySelectorAll('ARPT')].find(a =>
+        a.textContent.trim().toUpperCase() === 'SEA'
+      );
+      if (!seaNode) continue;
+
+      const avgDelay     = dt.querySelector('AvgDelay')?.textContent?.trim() || '';
+      const reason       = seaNode.closest('Airport')?.querySelector('Reason')?.textContent?.trim()
+                        || dt.querySelector('Reason')?.textContent?.trim() || '';
+      const isGroundStop = /ground.?stop|closure/i.test(name);
+      if (isGroundStop) hasGroundStop = true;
+      delays.push({ name, reason, avgDelay, isGroundStop });
+    }
+
+    if (!delays.length) {
+      setDot('sea-dot', 'green');
+      el.innerHTML = `<div class="nws-no-alerts"><span class="sev-green">&#10003;</span>&nbsp; SEA-TAC: No active delays or ground stops.</div>`;
+    } else {
+      setDot('sea-dot', hasGroundStop ? 'red' : 'amber');
+      el.innerHTML = delays.map(d => `
+        <div class="incident-item">
+          <div>
+            <div class="incident-sev ${d.isGroundStop ? 'sev-high' : 'sev-medium'}">${d.isGroundStop ? 'GND STOP' : 'DELAY'}</div>
+            ${d.avgDelay ? `<div style="font-size:8px;color:var(--text-dim);margin-top:3px;text-align:center">${d.avgDelay} avg</div>` : ''}
+          </div>
+          <div>
+            <div class="incident-desc">${d.name}</div>
+            <div class="incident-meta">${d.reason || 'No reason given'}</div>
+          </div>
+        </div>`).join('');
+    }
+    document.getElementById('sea-ts').textContent = `Refreshed ${ts()}`;
+  } catch(e) {
+    setDot('sea-dot', 'amber');
+    el.innerHTML = `<div class="error-msg">&#9888; FAA status unavailable: ${e.message}</div>`;
+    document.getElementById('sea-ts').textContent = 'ERROR';
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
 //  CONFIG NOTICE
 // ╚══════════════════════════════════════════════════════════╝
 function checkConfig() {
@@ -2337,6 +2452,7 @@ function init() {
   fetchSFD();
   fetchSeismic();
   fetchVolcano();
+  fetchSEA();
 
   setInterval(fetchWeather,     CONFIG.REFRESH_WEATHER_MS);
   setInterval(fetchAirQuality,  CONFIG.REFRESH_WEATHER_MS);   // same cadence as weather
@@ -2352,6 +2468,7 @@ function init() {
   setInterval(fetchScenicCams, 10 * 60 * 1000); // re-fetch full cam list every 10 min
   setInterval(fetchSeismic,    5  * 60 * 1000); // USGS earthquake feed
   setInterval(fetchVolcano,    30 * 60 * 1000); // volcano alert levels rarely change
+  setInterval(fetchSEA,        5  * 60 * 1000); // FAA airport status
 
   // Ops Brief — first render after 2s (allow panels to populate), then every 2 min
   setTimeout(generateOpsBrief, 2000);
