@@ -344,6 +344,18 @@
   .sfd-time  { font-size:9px; color:var(--text-dim); white-space:nowrap; }
   #sfd-note  { padding:4px 10px; font-size:8px; color:var(--text-dim); font-style:italic; border-top:1px solid var(--border); }
 
+  /* ── SEISMIC ── */
+  #seismic-quakes { max-height:260px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .seismic-section-label { padding:4px 10px; font-size:9px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--blue); background:var(--bg3); border-bottom:1px solid var(--border); border-top:1px solid var(--border); }
+  .seismic-section-label:first-child { border-top:none; }
+  .volcano-grid { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--border); }
+  .volcano-cell { padding:12px 14px; border-right:1px solid var(--border); }
+  .volcano-cell:last-child { border-right:none; }
+  .volcano-name  { font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  .volcano-alert { font-size:16px; font-weight:700; line-height:1; }
+  .volcano-avcode{ font-size:10px; font-weight:700; letter-spacing:0.08em; margin-top:3px; }
+  .volcano-updated { font-size:8px; color:var(--text-dim); margin-top:4px; }
+
   /* ── ERROR / LOADING ── */
   .loading-msg, .error-msg { padding:20px; text-align:center; font-size:11px; }
   .loading-msg { color:var(--text-dim); }
@@ -401,6 +413,7 @@
     <span><span class="dot dot-gray"  id="ferry-dot"></span> &#9972; Ferries</span>
     <span><span class="dot dot-gray"  id="transit-dot"></span> &#128650; Link Rail</span>
     <span><span class="dot dot-gray"  id="sfd-dot"></span> &#128658; SFD</span>
+    <span><span class="dot dot-gray"  id="seismic-dot"></span> &#127755; Seismic</span>
     <span id="sys-time">--:--:--</span>
   </div>
 </div>
@@ -449,6 +462,15 @@
       <span class="refresh-ts" id="nws-ts">—</span>
     </div>
     <div id="nws-alerts-list"><div class="loading-msg">Checking NWS&hellip;</div></div>
+  </div>
+
+  <!-- ── SEISMIC & VOLCANIC ── -->
+  <div class="panel" id="seismic-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#127755;</span> Seismic &amp; Volcanic Activity &mdash; PNW</span>
+      <span class="refresh-ts" id="seismic-ts">—</span>
+    </div>
+    <div id="seismic-content"><div class="loading-msg">Loading USGS data&hellip;</div></div>
   </div>
 
   <!-- ── DRIVE WINDOW ── -->
@@ -2146,6 +2168,139 @@ function generateOpsBrief() {
 }
 
 // ╔══════════════════════════════════════════════════════════╗
+//  SEISMIC & VOLCANIC (USGS — no key required)
+// ╚══════════════════════════════════════════════════════════╝
+let _seismicQuakes   = null;
+let _volcanoStatuses = null;
+
+function seismicAgo(ms) {
+  const s = Math.floor((Date.now() - ms) / 1000);
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return `${(s / 3600).toFixed(1)} hrs ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+function magSevClass(mag) {
+  if (mag >= 4.0) return 'sev-red';
+  if (mag >= 2.5) return 'sev-amber';
+  return 'sev-green';
+}
+
+function volcanoSevClass(level) {
+  const l = (level || '').toLowerCase();
+  if (l === 'normal')   return 'sev-green';
+  if (l === 'advisory') return 'sev-amber';
+  return 'sev-red';
+}
+
+function renderSeismic() {
+  const el = document.getElementById('seismic-content');
+  if (!_seismicQuakes && !_volcanoStatuses) return;
+
+  let html = '';
+
+  // ── Recent Earthquakes ───────────────────────────────────
+  html += `<div class="seismic-section-label">Recent Earthquakes — 300 km radius</div>`;
+  if (_seismicQuakes && _seismicQuakes.length) {
+    html += `<div id="seismic-quakes">`;
+    for (const f of _seismicQuakes) {
+      const p    = f.properties;
+      const mag  = p.mag != null ? p.mag.toFixed(1) : '?';
+      const cls  = magSevClass(p.mag ?? 0);
+      const place= p.place || 'Unknown location';
+      const depth= f.geometry?.coordinates?.[2] != null ? `${f.geometry.coordinates[2].toFixed(1)} km depth` : '';
+      const ago  = p.time ? seismicAgo(p.time) : '—';
+      html += `<div class="incident-item">
+        <div>
+          <div class="incident-sev ${cls}" style="font-size:13px;font-weight:700;padding:3px 6px">M${mag}</div>
+          ${depth ? `<div style="font-size:8px;color:var(--text-dim);margin-top:3px;text-align:center">${depth}</div>` : ''}
+        </div>
+        <div>
+          <div class="incident-desc">${place}</div>
+          <div class="incident-meta">${ago}</div>
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+  } else if (_seismicQuakes) {
+    html += `<div class="loading-msg" style="padding:12px">No M1.5+ earthquakes in the last period.</div>`;
+  } else {
+    html += `<div class="loading-msg" style="padding:12px">Loading earthquakes&hellip;</div>`;
+  }
+
+  // ── Cascade Volcanoes ────────────────────────────────────
+  html += `<div class="seismic-section-label">Cascade Volcanoes — Alert Status</div>`;
+  if (_volcanoStatuses) {
+    html += `<div class="volcano-grid">`;
+    for (const v of _volcanoStatuses) {
+      const alertCls  = volcanoSevClass(v.alert_level);
+      const colorCls  = volcanoSevClass(v.aviation_color);
+      const updated   = v.pub_date ? new Date(v.pub_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+      html += `<div class="volcano-cell">
+        <div class="volcano-name">${v.name}</div>
+        <div class="volcano-alert ${alertCls}">${v.alert_level || '—'}</div>
+        <div class="volcano-avcode ${colorCls}">&#9992; ${v.aviation_color || '—'}</div>
+        <div class="volcano-updated">Updated ${updated}</div>
+      </div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div class="loading-msg" style="padding:12px">Loading volcano data&hellip;</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+async function fetchSeismic() {
+  const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson` +
+    `&latitude=${CONFIG.LAT}&longitude=${CONFIG.LON}&maxradiuskm=300` +
+    `&minmagnitude=1.5&orderby=time&limit=8`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    _seismicQuakes = data.features || [];
+    // Dot: red if any M4+, amber if any M2.5+, else green
+    const maxMag = _seismicQuakes.reduce((m, f) => Math.max(m, f.properties.mag ?? 0), 0);
+    setDot('seismic-dot', maxMag >= 4.0 ? 'red' : maxMag >= 2.5 ? 'amber' : 'green');
+    renderSeismic();
+    document.getElementById('seismic-ts').textContent = `Quakes refreshed ${ts()}`;
+  } catch(e) {
+    setDot('seismic-dot', 'red');
+    _seismicQuakes = [];
+    renderSeismic();
+    document.getElementById('seismic-ts').textContent = `Quake fetch failed: ${e.message}`;
+  }
+}
+
+async function fetchVolcano() {
+  const TARGETS = ['Mount Rainier', 'Mount Baker', 'Mount St. Helens'];
+  const url = `https://volcanoes.usgs.gov/vhp/updates/volcano_updates.json`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data.updates || data.volcanoes || Object.values(data));
+    _volcanoStatuses = TARGETS.map(target => {
+      const match = list.find(v => (v.name || v.volcano_name || '').toLowerCase().includes(target.toLowerCase()));
+      return match
+        ? { name: target, alert_level: match.alert_level || match.alert || '—', aviation_color: match.aviation_color || match.color || '—', pub_date: match.pub_date || match.updated || null }
+        : { name: target, alert_level: 'Normal', aviation_color: 'GREEN', pub_date: null };
+    });
+    renderSeismic();
+    document.getElementById('seismic-ts').textContent = `Refreshed ${ts()}`;
+  } catch(e) {
+    _volcanoStatuses = [
+      { name:'Mount Rainier',    alert_level:'—', aviation_color:'—', pub_date:null },
+      { name:'Mount Baker',      alert_level:'—', aviation_color:'—', pub_date:null },
+      { name:'Mount St. Helens', alert_level:'—', aviation_color:'—', pub_date:null },
+    ];
+    renderSeismic();
+    document.getElementById('seismic-ts').textContent = `Volcano fetch failed: ${e.message}`;
+  }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
 //  CONFIG NOTICE
 // ╚══════════════════════════════════════════════════════════╝
 function checkConfig() {
@@ -2171,6 +2326,8 @@ function init() {
   fetchScenicCams();
   fetchEvents();
   fetchSFD();
+  fetchSeismic();
+  fetchVolcano();
 
   setInterval(fetchWeather,     CONFIG.REFRESH_WEATHER_MS);
   setInterval(fetchAirQuality,  CONFIG.REFRESH_WEATHER_MS);   // same cadence as weather
@@ -2184,6 +2341,8 @@ function init() {
   setInterval(fetchTransit,   90 * 1000);
   setInterval(refreshAllCams,  60 * 1000);       // refresh all cam images every 60s
   setInterval(fetchScenicCams, 10 * 60 * 1000); // re-fetch full cam list every 10 min
+  setInterval(fetchSeismic,    5  * 60 * 1000); // USGS earthquake feed
+  setInterval(fetchVolcano,    30 * 60 * 1000); // volcano alert levels rarely change
 
   // Ops Brief — first render after 2s (allow panels to populate), then every 2 min
   setTimeout(generateOpsBrief, 2000);
