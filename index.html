@@ -65,39 +65,6 @@
   #quote-strip .q-mark { color:var(--gv-purple); font-size:16px; font-style:normal; flex-shrink:0; }
   #quote-strip .q-attr { color:var(--gv-green); font-style:normal; font-weight:600; }
 
-  /* ── HERO STRIP ── */
-  #hero-strip {
-    width: 100%;
-    height: 160px;
-    display: flex;
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    overflow: hidden;
-    position: relative;
-  }
-  #hero-strip img {
-    width: 100%; height: 100%;
-    object-fit: cover; object-position: center;
-    display: block;
-  }
-  #hero-strip-fallback {
-    display: none;
-    width: 100%; height: 100%;
-    align-items: center; justify-content: center;
-    font-size: 10px; color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-    background: var(--bg2);
-  }
-  #hero-strip-label {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 18px 10px 6px;
-    background: linear-gradient(transparent, rgba(7,6,15,0.82));
-    font-size: 8px; color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    pointer-events: none;
-  }
-
   /* ── LAYOUT ── */
   #main { padding:10px 12px; display:grid; gap:10px; }
 
@@ -443,7 +410,6 @@
 
     /* ── GLOBAL: zero horizontal overflow ── */
     html, body { overflow-x: hidden; }
-    #hero-strip { height: 110px; }
     #main { padding: 6px; gap: 8px; }
     .panel { max-width: 100%; }
     .refresh-ts { display: none; }
@@ -603,14 +569,6 @@
 <div id="quote-strip">
   <span class="q-mark">&#8220;</span>
   <span id="quote-text" style="flex:1">Loading&hellip;</span>
-</div>
-
-<!-- ═════════════════════════════════════════ HERO STRIP ═══ -->
-<div id="hero-strip">
-  <img id="hero-cam-img" src="" alt="Mt. Rainier NPS Paradise Webcam"
-    onerror="document.getElementById('hero-cam-img').style.display='none';document.getElementById('hero-strip-fallback').style.display='flex';">
-  <div id="hero-strip-fallback">Rainier view unavailable</div>
-  <div id="hero-strip-label">&#127755; MT. RAINIER LIVE &mdash; NPS Paradise Webcam</div>
 </div>
 
 <!-- ═══════════════════════════════════════════ MAIN ═══ -->
@@ -1174,15 +1132,6 @@ function parseDotNetDate(s) {
 // ╔══════════════════════════════════════════════════════════╗
 //  SYSTEM CLOCK
 // ╚══════════════════════════════════════════════════════════╝
-function refreshHeroCam() {
-  const img = document.getElementById('hero-cam-img');
-  if (!img) return;
-  const fallback = document.getElementById('hero-strip-fallback');
-  img.style.display = 'block';
-  if (fallback) fallback.style.display = 'none';
-  img.src = `https://www.nps.gov/webcams-mora/mtrainier.jpg?t=${Date.now()}`;
-}
-
 function startClock() {
   const el = document.getElementById('sys-time');
   const tick = () => { el.textContent = ts(); };
@@ -2969,7 +2918,6 @@ function init() {
   fetchSeismic();
   fetchVolcano();
   fetchSEA();
-  refreshHeroCam();
 
   setInterval(fetchWeather,     CONFIG.REFRESH_WEATHER_MS);
   setInterval(fetchAirQuality,  CONFIG.REFRESH_WEATHER_MS);   // same cadence as weather
@@ -2987,7 +2935,6 @@ function init() {
   setInterval(fetchSeismic,    5  * 60 * 1000); // USGS earthquake feed
   setInterval(fetchVolcano,    30 * 60 * 1000); // volcano alert levels rarely change
   setInterval(fetchSEA,        5  * 60 * 1000); // FAA airport status
-  setInterval(refreshHeroCam,  5  * 60 * 1000); // NPS Rainier webcam
 
   // Ops Brief — first render after 2s (allow panels to populate), then every 2 min
   setTimeout(generateOpsBrief, 2000);
