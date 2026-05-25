@@ -401,6 +401,88 @@
   .ops-pulse    { animation:ops-pulse-anim 1.4s ease-in-out infinite; }
   @keyframes ops-pulse-anim { 0%,100%{opacity:1} 50%{opacity:0.15} }
   #ops-brief-footer { padding:5px 14px 9px; font-size:8px; color:rgba(61,214,42,0.28); letter-spacing:0.08em; text-transform:uppercase; position:relative; z-index:11; border-top:1px solid rgba(42,34,82,0.4); margin-top:4px; }
+
+  /* ══════════════════════════════════════════════════════════
+     MOBILE PORTRAIT — max-width 480px
+     Desktop / tablet layout is completely unchanged below.
+  ══════════════════════════════════════════════════════════ */
+  @media (max-width: 480px) {
+
+    /* ── LAYOUT ── */
+    #main         { padding:6px; gap:8px; }
+    #ferry-routes { grid-template-columns:1fr; }
+    #extras-grid  { grid-template-columns:1fr; }
+    #events-list  { max-height:none; }
+
+    /* ── HEADER ── */
+    #header {
+      flex-direction:column;
+      align-items:flex-start;
+      gap:6px;
+      padding:8px 10px;
+    }
+    /* Hide status dot spans; keep only sys-time */
+    #header .header-right span:not(#sys-time) { display:none; }
+    .brand-goat, .brand-vision { font-size:16px; }
+    #sys-time { font-size:12px; }
+
+    /* ── CONDITIONS STRIP ── */
+    .cond-cell  { min-width:90px; }
+    .cond-value { font-size:18px; }
+
+    /* ── TRAVEL TIMES ── */
+    #tt-filters { display:none; }
+    .tt-row {
+      grid-template-columns:auto 1fr;
+      grid-template-rows:auto auto;
+      gap:4px 8px;
+      padding:5px 8px;
+    }
+    /* Row 1: tag + name; Row 2: current time (left) + badge (right) */
+    .tt-cur   { grid-column:1; text-align:left; font-size:14px; }
+    .tt-avg   { display:none; }
+    .tt-badge { grid-column:2; text-align:right; align-self:center; }
+
+    /* ── FERRY ── */
+    .ferry-boat { font-size:16px; }
+    .ferry-term { font-size:7px; }
+
+    /* ── SCENIC CAMERAS ── */
+    #scenic-grid  { grid-template-columns:1fr 1fr; }
+    .cam-cell img { height:100px; }
+    .cam-cell-ph  { height:100px; }
+
+    /* ── TRANSIT ── */
+    .transit-cols-grid { overflow-x:auto; }
+    #transit-content::before {
+      content:'← Scroll for more lines';
+      display:block;
+      font-size:9px;
+      color:var(--text-dim);
+      padding:5px 10px;
+      border-bottom:1px solid var(--border);
+    }
+
+    /* ── DRIVE CHART ── */
+    #drive-chart-wrap { overflow-x:auto; }
+    #drive-chart      { height:55px; min-width:320px; }
+    .drive-bar-label  { font-size:7px; }
+    .drive-bar-score  { font-size:7px; }
+
+    /* ── TRAFFIC MAP ── */
+    #trafficmap-svg-wrap { overflow-x:auto; }
+    #trafficmap-svg      { max-width:100%; }
+    .tm-legend      { gap:8px; }
+    .tm-legend-item { font-size:8px; }
+    .tm-swatch      { width:14px; }
+
+    /* ── GENERAL ── */
+    .panel-title   { font-size:9px; }
+    .refresh-ts    { font-size:8px; }
+    .incident-item { padding:5px 8px; }
+    .sfd-item      { padding:5px 8px; }
+
+  }
 </style>
 </head>
 <body>
