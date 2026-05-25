@@ -464,25 +464,6 @@
     <div id="nws-alerts-list"><div class="loading-msg">Checking NWS&hellip;</div></div>
   </div>
 
-  <!-- ── SEISMIC & VOLCANIC ── -->
-  <div class="panel" id="seismic-panel">
-    <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#127755;</span> Seismic &amp; Volcanic Activity &mdash; PNW</span>
-      <span class="refresh-ts" id="seismic-ts">—</span>
-    </div>
-    <div id="seismic-content"><div class="loading-msg">Loading USGS data&hellip;</div></div>
-  </div>
-
-  <!-- ── DRIVE WINDOW ── -->
-  <div class="panel" id="drive-window">
-    <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128663;</span> 12-Hour Drive Quality Window</span>
-      <span class="refresh-ts" id="drive-ts">—</span>
-    </div>
-    <div id="drive-summary"><span class="loading-msg">Calculating…</span></div>
-    <div id="drive-chart-wrap"><div id="drive-chart"></div></div>
-  </div>
-
   <!-- ── INCIDENTS ── -->
   <div class="panel" id="incidents-panel">
     <div class="panel-header">
@@ -490,71 +471,6 @@
       <span class="refresh-ts" id="incidents-ts">—</span>
     </div>
     <div id="incidents-list"><div class="loading-msg">Loading incidents…</div></div>
-  </div>
-
-  <!-- ── FERRY ── -->
-  <div class="panel" id="ferry-panel">
-    <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#9972;</span> WSF Ferry Status — Live Vessel Positions</span>
-      <span class="refresh-ts" id="ferry-ts">—</span>
-    </div>
-    <div id="ferry-content"><div class="loading-msg">Loading ferry data…</div></div>
-  </div>
-
-  <!-- ── SFD FIRE & DISPATCH ── -->
-  <div class="panel" id="sfd-panel">
-    <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128658;</span> Seattle Fire &amp; Aid Dispatches — Last 2 Hours</span>
-      <span class="refresh-ts" id="sfd-ts">—</span>
-    </div>
-    <div id="sfd-content"><div class="loading-msg">Loading SFD dispatch data&hellip;</div></div>
-  </div>
-
-  <!-- ── UPCOMING EVENTS ── -->
-  <div class="panel" id="events-panel">
-    <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128197;</span> Game Day &amp; Major Events — Next 14 Days</span>
-      <span class="refresh-ts" id="events-ts">—</span>
-    </div>
-    <div id="events-list"><div class="loading-msg">Loading events…</div></div>
-  </div>
-
-  <!-- ── EXTRAS GRID (Coffee / Tide / Bicycle) ── -->
-  <div id="extras-grid">
-
-    <div class="panel" id="coffee-panel">
-      <div class="panel-header">
-        <span class="panel-title"><span class="panel-icon">&#9749;</span> Seattle Coffee Index</span>
-        <span class="refresh-ts" id="coffee-ts">—</span>
-      </div>
-      <div id="coffee-content" style="padding:10px"><div class="loading-msg">Calculating…</div></div>
-    </div>
-
-    <div class="panel" id="tide-panel">
-      <div class="panel-header">
-        <span class="panel-title"><span class="panel-icon">&#8767;</span> Puget Sound Tide</span>
-        <span class="refresh-ts" id="tide-ts">—</span>
-      </div>
-      <div id="tide-content" style="padding:10px"><div class="loading-msg">Loading tide data…</div></div>
-    </div>
-
-    <div class="panel" id="bike-panel">
-      <div class="panel-header">
-        <span class="panel-title"><span class="panel-icon">&#128690;</span> Bicycle Conditions</span>
-        <span class="refresh-ts" id="bike-ts">—</span>
-      </div>
-      <div id="bike-content" style="padding:10px"><div class="loading-msg">Calculating…</div></div>
-    </div>
-
-  </div><!-- /extras-grid -->
-
-  <!-- ── LINK LIGHT RAIL ── -->
-  <div class="panel" id="transit-panel">
-    <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128650;</span> Link Light Rail — All Stations</span>
-      <span class="refresh-ts" id="transit-ts">—</span>
-    </div>
-    <div id="transit-content"><div class="loading-msg">Connecting to OneBusAway…</div></div>
   </div>
 
   <!-- ── TRAVEL TIMES ── -->
@@ -573,24 +489,14 @@
     <div id="tt-list"><div class="loading-msg">Loading travel times…</div></div>
   </div>
 
-  <!-- ── SCENIC CAMERAS GRID ── -->
-  <div class="panel" id="scenic-panel">
+  <!-- ── DRIVE WINDOW ── -->
+  <div class="panel" id="drive-window">
     <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128247;</span> Live Camera Feeds — Puget Sound &amp; Ferry Terminals</span>
-      <span class="refresh-ts" id="scenic-ts">—</span>
+      <span class="panel-title"><span class="panel-icon">&#128663;</span> 12-Hour Drive Quality Window</span>
+      <span class="refresh-ts" id="drive-ts">—</span>
     </div>
-    <div id="scenic-grid"><div class="loading-msg" style="grid-column:1/-1;padding:20px">Loading camera feeds…</div></div>
-    <div id="scenic-footer">
-      <button class="scenic-btn" onclick="refreshAllCams()">&#8635; Refresh All</button>
-      <span style="font-size:9px;color:var(--text-dim)" id="scenic-auto-label">Auto-refreshes every 60s &nbsp;·&nbsp; Click any image to expand</span>
-    </div>
-  </div>
-
-  <!-- Lightbox -->
-  <div id="cam-lightbox" onclick="closeLightbox()">
-    <img id="cam-lb-img" src="" alt="">
-    <div id="cam-lb-label"></div>
-    <button id="cam-lb-close" onclick="closeLightbox()">&#10005; Close</button>
+    <div id="drive-summary"><span class="loading-msg">Calculating…</span></div>
+    <div id="drive-chart-wrap"><div id="drive-chart"></div></div>
   </div>
 
   <!-- ── TRAFFIC MAP ── -->
@@ -681,6 +587,100 @@
         <text x="48" y="301" font-family="monospace" font-size="8" fill="#8a7faa">Heavy Delay</text>
       </svg>
     </div>
+  </div>
+
+  <!-- ── FERRY ── -->
+  <div class="panel" id="ferry-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#9972;</span> WSF Ferry Status — Live Vessel Positions</span>
+      <span class="refresh-ts" id="ferry-ts">—</span>
+    </div>
+    <div id="ferry-content"><div class="loading-msg">Loading ferry data…</div></div>
+  </div>
+
+  <!-- ── LINK LIGHT RAIL ── -->
+  <div class="panel" id="transit-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128650;</span> Link Light Rail — All Stations</span>
+      <span class="refresh-ts" id="transit-ts">—</span>
+    </div>
+    <div id="transit-content"><div class="loading-msg">Connecting to OneBusAway…</div></div>
+  </div>
+
+  <!-- ── UPCOMING EVENTS ── -->
+  <div class="panel" id="events-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128197;</span> Game Day &amp; Major Events — Next 14 Days</span>
+      <span class="refresh-ts" id="events-ts">—</span>
+    </div>
+    <div id="events-list"><div class="loading-msg">Loading events…</div></div>
+  </div>
+
+  <!-- ── SFD FIRE & DISPATCH ── -->
+  <div class="panel" id="sfd-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128658;</span> Seattle Fire &amp; Aid Dispatches — Last 2 Hours</span>
+      <span class="refresh-ts" id="sfd-ts">—</span>
+    </div>
+    <div id="sfd-content"><div class="loading-msg">Loading SFD dispatch data&hellip;</div></div>
+  </div>
+
+  <!-- ── SEISMIC & VOLCANIC ── -->
+  <div class="panel" id="seismic-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#127755;</span> Seismic &amp; Volcanic Activity &mdash; PNW</span>
+      <span class="refresh-ts" id="seismic-ts">—</span>
+    </div>
+    <div id="seismic-content"><div class="loading-msg">Loading USGS data&hellip;</div></div>
+  </div>
+
+  <!-- ── EXTRAS GRID (Coffee / Tide / Bicycle) ── -->
+  <div id="extras-grid">
+
+    <div class="panel" id="coffee-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#9749;</span> Seattle Coffee Index</span>
+        <span class="refresh-ts" id="coffee-ts">—</span>
+      </div>
+      <div id="coffee-content" style="padding:10px"><div class="loading-msg">Calculating…</div></div>
+    </div>
+
+    <div class="panel" id="tide-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#8767;</span> Puget Sound Tide</span>
+        <span class="refresh-ts" id="tide-ts">—</span>
+      </div>
+      <div id="tide-content" style="padding:10px"><div class="loading-msg">Loading tide data…</div></div>
+    </div>
+
+    <div class="panel" id="bike-panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-icon">&#128690;</span> Bicycle Conditions</span>
+        <span class="refresh-ts" id="bike-ts">—</span>
+      </div>
+      <div id="bike-content" style="padding:10px"><div class="loading-msg">Calculating…</div></div>
+    </div>
+
+  </div><!-- /extras-grid -->
+
+  <!-- ── SCENIC CAMERAS GRID ── -->
+  <div class="panel" id="scenic-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128247;</span> Live Camera Feeds — Puget Sound &amp; Ferry Terminals</span>
+      <span class="refresh-ts" id="scenic-ts">—</span>
+    </div>
+    <div id="scenic-grid"><div class="loading-msg" style="grid-column:1/-1;padding:20px">Loading camera feeds…</div></div>
+    <div id="scenic-footer">
+      <button class="scenic-btn" onclick="refreshAllCams()">&#8635; Refresh All</button>
+      <span style="font-size:9px;color:var(--text-dim)" id="scenic-auto-label">Auto-refreshes every 60s &nbsp;·&nbsp; Click any image to expand</span>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="cam-lightbox" onclick="closeLightbox()">
+    <img id="cam-lb-img" src="" alt="">
+    <div id="cam-lb-label"></div>
+    <button id="cam-lb-close" onclick="closeLightbox()">&#10005; Close</button>
   </div>
 
 </div><!-- /main -->
