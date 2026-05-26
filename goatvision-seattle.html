@@ -2316,7 +2316,7 @@ function renderBike(data) {
 const OBA_BASE = CITY_CONFIG.obaBaseUrl;
 
 async function obaFetch(path) {
-  const key = CONFIG.OBA_KEY || 'TEST';
+  const key = CONFIG.OBA_KEY || CITY_CONFIG.obaKey || 'TEST';
   const sep = path.includes('?') ? '&' : '?';
   const res = await fetch(`${OBA_BASE}${path}${sep}key=${key}`);
   if (!res.ok) throw new Error(`OBA HTTP ${res.status}`);
@@ -2480,7 +2480,7 @@ async function fetchMetro() {
     const stopData = new Map();
 
     for (let i = 0; i < uniqueStops.length; i++) {
-      if (i > 0) await _metroDelay(300);
+      if (i > 0) await _metroDelay(500);
       const sid = uniqueStops[i];
       try {
         const d = await obaFetch(
@@ -3145,10 +3145,11 @@ function checkConfig() {
 // ╔══════════════════════════════════════════════════════════╗
 //  INIT
 // ╚══════════════════════════════════════════════════════════╝
-function init() {
+async function init() {
   startClock();
   setDailyQuote();
   checkConfig();
+  console.log('[OBA] using key:', (CONFIG.OBA_KEY || CITY_CONFIG.obaKey || 'TEST').substring(0, 8) + '...');
 
   fetchWeather();
   fetchAirQuality();
@@ -3156,7 +3157,8 @@ function init() {
   fetchIncidents();
   fetchFerry();
   fetchTide();
-  fetchTransit();
+  await fetchTransit();
+  await new Promise(r => setTimeout(r, 2000));
   fetchMetro();
   fetchTravelTimes();
   fetchScenicCams();
