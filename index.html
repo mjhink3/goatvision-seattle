@@ -375,12 +375,18 @@
   .volcano-updated { font-size:8px; color:var(--text-dim); margin-top:4px; }
 
   /* ── QUICK LINKS ── */
-  #links-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border-top:1px solid var(--border); }
-  .link-item { display:flex; flex-direction:column; gap:3px; padding:10px 12px; background:var(--bg2); text-decoration:none; transition:background 0.12s; }
-  .link-item:hover { background:var(--bg3); }
-  .link-cat  { font-size:8px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--blue); }
-  .link-name { font-size:10px; color:var(--text-bright); font-weight:500; }
-  .link-item:hover .link-name { color:var(--gv-green); }
+  #links-body { padding:10px 14px; display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--border); }
+  .link-group-header {
+    font-family:var(--mono); font-size:8px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--text-dim); padding-bottom:6px; border-bottom:1px solid var(--border); margin-bottom:4px;
+  }
+  .link-group-btns { display:flex; flex-wrap:wrap; gap:5px; }
+  .link-btn {
+    font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+    padding:3px 8px; background:var(--bg3); border:1px solid var(--border); color:var(--text-dim);
+    text-decoration:none; transition:all 0.15s; white-space:nowrap;
+  }
+  .link-btn:hover { background:var(--blue-dim); border-color:var(--blue); color:var(--text-bright); }
 
   /* ── ERROR / LOADING ── */
   .loading-msg, .error-msg { padding:20px; text-align:center; font-size:11px; }
@@ -697,8 +703,6 @@
     /* ── HOSPITALS / VET: single column ── */
     #hospitals-grid, #vet-grid { grid-template-columns: 1fr; }
 
-    /* ── QUICK LINKS: 2-col grid ── */
-    #links-grid { grid-template-columns: repeat(2, 1fr); }
 
     /* ── SCENIC CAMERAS: 2-col grid ── */
     #scenic-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1120,55 +1124,58 @@
     <div class="panel-header">
       <span class="panel-title"><span class="panel-icon">&#128279;</span> Regional Quick Links</span>
     </div>
-    <div id="links-grid">
-      <a class="link-item" href="https://scl.datacapable.com/map/" target="_blank" rel="noopener">
-        <span class="link-cat">Power</span>
-        <span class="link-name">Seattle City Light Outage Map</span>
-      </a>
-      <a class="link-item" href="https://www.pse.com/en/outage/outage-map" target="_blank" rel="noopener">
-        <span class="link-cat">Power</span>
-        <span class="link-name">PSE Outage Map</span>
-      </a>
-      <a class="link-item" href="https://www.seattleschools.org" target="_blank" rel="noopener">
-        <span class="link-cat">Schools</span>
-        <span class="link-name">Seattle Public Schools</span>
-      </a>
-      <a class="link-item" href="https://bsd405.org" target="_blank" rel="noopener">
-        <span class="link-cat">Schools</span>
-        <span class="link-name">Bellevue School District</span>
-      </a>
-      <a class="link-item" href="https://www.nsd.org" target="_blank" rel="noopener">
-        <span class="link-cat">Schools</span>
-        <span class="link-name">Northshore School District</span>
-      </a>
-      <a class="link-item" href="https://kingcounty.gov/metro" target="_blank" rel="noopener">
-        <span class="link-cat">Transit</span>
-        <span class="link-name">King County Metro Trip Planner</span>
-      </a>
-      <a class="link-item" href="https://wsdot.wa.gov/travel/real-time-traffic" target="_blank" rel="noopener">
-        <span class="link-cat">Traffic</span>
-        <span class="link-name">WSDOT Real-Time Traffic</span>
-      </a>
-      <a class="link-item" href="https://www.portseattle.org/sea-tac" target="_blank" rel="noopener">
-        <span class="link-cat">Airport</span>
-        <span class="link-name">Port of Seattle / Sea-Tac</span>
-      </a>
-      <a class="link-item" href="https://alert.seattle.gov" target="_blank" rel="noopener">
-        <span class="link-cat">Emergency</span>
-        <span class="link-name">AlertSeattle</span>
-      </a>
-      <a class="link-item" href="https://sdot.seattle.gov" target="_blank" rel="noopener">
-        <span class="link-cat">Transportation</span>
-        <span class="link-name">SDOT Seattle Transportation</span>
-      </a>
-      <a class="link-item" href="https://www.soundtransit.org" target="_blank" rel="noopener">
-        <span class="link-cat">Transit</span>
-        <span class="link-name">Sound Transit</span>
-      </a>
-      <a class="link-item" href="https://visitseattle.org" target="_blank" rel="noopener">
-        <span class="link-cat">Tourism</span>
-        <span class="link-name">Visit Seattle</span>
-      </a>
+    <div id="links-body">
+
+      <div class="link-group">
+        <div class="link-group-header">Emergency &amp; Health</div>
+        <div class="link-group-btns">
+          <a class="link-btn" href="https://wa211.org" target="_blank" rel="noopener noreferrer">Washington 211 (Social Services)</a>
+          <a class="link-btn" href="tel:+18884264435">(888) 426-4435 &mdash; ASPCA Poison Control</a>
+          <a class="link-btn" href="https://kingcounty.gov/depts/health.aspx" target="_blank" rel="noopener noreferrer">King County Public Health</a>
+        </div>
+      </div>
+
+      <div class="link-group">
+        <div class="link-group-header">Transportation</div>
+        <div class="link-group-btns">
+          <a class="link-btn" href="https://wsdot.wa.gov/travel/511" target="_blank" rel="noopener noreferrer">WA 511 &mdash; Road Conditions</a>
+          <a class="link-btn" href="https://wsdot.wa.gov/travel/real-time-traffic/cameras" target="_blank" rel="noopener noreferrer">WSDOT Traffic Cameras</a>
+          <a class="link-btn" href="https://www.soundtransit.org/ride-with-us/know-before-you-go/real-time-transit-information" target="_blank" rel="noopener noreferrer">Sound Transit Trip Planner</a>
+          <a class="link-btn" href="https://kingcounty.gov/depts/transportation/metro/travel-options/trip-planner.aspx" target="_blank" rel="noopener noreferrer">King County Metro Trip Planner</a>
+          <a class="link-btn" href="https://weather.gov/SEW/marine" target="_blank" rel="noopener noreferrer">NOAA Puget Sound Marine Forecast</a>
+        </div>
+      </div>
+
+      <div class="link-group">
+        <div class="link-group-header">City &amp; County</div>
+        <div class="link-group-btns">
+          <a class="link-btn" href="https://scl.datacapable.com/map/" target="_blank" rel="noopener noreferrer">Seattle City Light Outage Map</a>
+          <a class="link-btn" href="https://www.pse.com/en/outage/outage-map" target="_blank" rel="noopener noreferrer">PSE Outage Map</a>
+          <a class="link-btn" href="https://alert.seattle.gov" target="_blank" rel="noopener noreferrer">AlertSeattle (Emergency Alerts)</a>
+          <a class="link-btn" href="https://sdot.seattle.gov" target="_blank" rel="noopener noreferrer">SDOT (Seattle Transportation)</a>
+          <a class="link-btn" href="https://seattle.gov/parks/reservations" target="_blank" rel="noopener noreferrer">Seattle Parks Reservations</a>
+        </div>
+      </div>
+
+      <div class="link-group">
+        <div class="link-group-header">Schools</div>
+        <div class="link-group-btns">
+          <a class="link-btn" href="https://www.seattleschools.org" target="_blank" rel="noopener noreferrer">Seattle Public Schools</a>
+          <a class="link-btn" href="https://bsd405.org" target="_blank" rel="noopener noreferrer">Bellevue School District</a>
+          <a class="link-btn" href="https://www.nsd.org" target="_blank" rel="noopener noreferrer">Northshore SD</a>
+        </div>
+      </div>
+
+      <div class="link-group">
+        <div class="link-group-header">Regional</div>
+        <div class="link-group-btns">
+          <a class="link-btn" href="https://visitseattle.org" target="_blank" rel="noopener noreferrer">Visit Seattle</a>
+          <a class="link-btn" href="https://www.portseattle.org/sea-tac" target="_blank" rel="noopener noreferrer">Port of Seattle / Sea-Tac</a>
+          <a class="link-btn" href="https://www.soundtransit.org" target="_blank" rel="noopener noreferrer">Sound Transit</a>
+          <a class="link-btn" href="https://wsdot.wa.gov/travel/real-time-traffic" target="_blank" rel="noopener noreferrer">WSDOT Traffic</a>
+        </div>
+      </div>
+
     </div>
   </div>
 
