@@ -26,6 +26,7 @@
     --mono: 'JetBrains Mono', 'Courier New', monospace;
     --gv-purple: #7744f2;
     --gv-green:  #3dd62a;
+    --teal:      #00d9ff;
   }
 
   html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--mono); font-size:12px; line-height:1.4; overflow-x:hidden; }
@@ -402,6 +403,61 @@
   @keyframes ops-pulse-anim { 0%,100%{opacity:1} 50%{opacity:0.15} }
   #ops-brief-footer { padding:5px 14px 9px; font-size:8px; color:rgba(61,214,42,0.28); letter-spacing:0.08em; text-transform:uppercase; position:relative; z-index:11; border-top:1px solid rgba(42,34,82,0.4); margin-top:4px; }
 
+  /* ── HOSPITALS PANEL ── */
+  #hospitals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .hosp-card {
+    background: var(--bg2);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .hosp-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--teal);
+    font-family: var(--mono);
+    line-height: 1.3;
+  }
+  .hosp-addr {
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+  .hosp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .hosp-tag {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 5px;
+    border: 1px solid var(--green);
+    color: var(--green);
+    background: rgba(61,214,42,0.08);
+    white-space: nowrap;
+  }
+  #hospitals-footer {
+    padding: 7px 14px;
+    font-size: 9px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+  }
+  #hospitals-footer a {
+    color: var(--text-dim);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  #hospitals-footer a:hover { color: var(--teal); }
+
   /* ══════════════════════════════════════════════════════════
      MOBILE PORTRAIT — max-width 480px
      Desktop / tablet layout is completely unchanged below.
@@ -522,6 +578,9 @@
     .transit-route-col { display: block; width: 100%; border-right: none; border-bottom: 1px solid var(--border); min-width: 0; }
     .transit-route-col:last-child { border-bottom: none; }
     .transit-stops-scroll { max-height: none; overflow-y: visible; }
+
+    /* ── HOSPITALS: single column ── */
+    #hospitals-grid { grid-template-columns: 1fr; }
 
     /* ── QUICK LINKS: 2-col grid ── */
     #links-grid { grid-template-columns: repeat(2, 1fr); }
@@ -893,6 +952,85 @@
         <span class="link-cat">Tourism</span>
         <span class="link-name">Visit Seattle</span>
       </a>
+    </div>
+  </div>
+
+  <!-- ── HOSPITALS ── -->
+  <div class="panel" id="hospitals-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#127973;</span> Regional Trauma &amp; Major Medical Centers</span>
+    </div>
+    <div id="hospitals-grid">
+
+      <div class="hosp-card">
+        <div class="hosp-name">Harborview Medical Center</div>
+        <div class="hosp-addr">325 9th Ave, Seattle</div>
+        <div class="hosp-tags">
+          <span class="hosp-tag">Level I Trauma</span>
+          <span class="hosp-tag">Burn Center</span>
+          <span class="hosp-tag">Neurology</span>
+          <span class="hosp-tag">Psychiatry</span>
+        </div>
+      </div>
+
+      <div class="hosp-card">
+        <div class="hosp-name">UW Medical Center</div>
+        <div class="hosp-addr">1959 NE Pacific St, Seattle</div>
+        <div class="hosp-tags">
+          <span class="hosp-tag">Level I Trauma</span>
+          <span class="hosp-tag">Transplant</span>
+          <span class="hosp-tag">Cancer</span>
+          <span class="hosp-tag">Neuroscience</span>
+        </div>
+      </div>
+
+      <div class="hosp-card">
+        <div class="hosp-name">Swedish Medical Center</div>
+        <div class="hosp-addr">747 Broadway, Seattle</div>
+        <div class="hosp-tags">
+          <span class="hosp-tag">Level II Trauma</span>
+          <span class="hosp-tag">Cardiac</span>
+          <span class="hosp-tag">Neuroscience</span>
+          <span class="hosp-tag">Oncology</span>
+        </div>
+      </div>
+
+      <div class="hosp-card">
+        <div class="hosp-name">Virginia Mason Medical Center</div>
+        <div class="hosp-addr">1100 9th Ave, Seattle</div>
+        <div class="hosp-tags">
+          <span class="hosp-tag">Orthopedics</span>
+          <span class="hosp-tag">Cancer</span>
+          <span class="hosp-tag">Digestive Disease</span>
+          <span class="hosp-tag">Specialty Care</span>
+        </div>
+      </div>
+
+      <div class="hosp-card">
+        <div class="hosp-name">Overlake Medical Center</div>
+        <div class="hosp-addr">1035 116th Ave NE, Bellevue</div>
+        <div class="hosp-tags">
+          <span class="hosp-tag">Level III Trauma</span>
+          <span class="hosp-tag">Emergency</span>
+          <span class="hosp-tag">Cardiac</span>
+          <span class="hosp-tag">East Side Primary</span>
+        </div>
+      </div>
+
+      <div class="hosp-card">
+        <div class="hosp-name">Seattle Children's Hospital</div>
+        <div class="hosp-addr">4800 Sand Point Way NE, Seattle</div>
+        <div class="hosp-tags">
+          <span class="hosp-tag">Pediatric Level I Trauma</span>
+          <span class="hosp-tag">Cancer</span>
+          <span class="hosp-tag">Surgery</span>
+          <span class="hosp-tag">Neurology</span>
+        </div>
+      </div>
+
+    </div>
+    <div id="hospitals-footer">
+      For live diversion status: <a href="https://kingcountyems.org" target="_blank" rel="noopener">kingcountyems.org</a>
     </div>
   </div>
 
