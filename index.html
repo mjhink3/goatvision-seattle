@@ -3258,14 +3258,25 @@ async function fetchVolcano() {
 //  SEA-TAC AIRPORT STATUS (FAA NAS Status API — no key)
 // ╚══════════════════════════════════════════════════════════╝
 async function fetchSEA() {
-  const FAA_PROXIED = 'https://corsproxy.io/?https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
+  const FAA_URL = 'https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
+  const PROXIES = [
+    `https://corsproxy.io/?${encodeURIComponent(FAA_URL)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(FAA_URL)}`,
+    `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(FAA_URL)}`,
+    FAA_URL
+  ];
   const el = document.getElementById('sea-content');
 
   let text = null;
-  try {
-    const res = await fetch(FAA_PROXIED);
-    if (res.ok) text = await res.text();
-  } catch(e) { /* corsproxy failed */ }
+  for (const url of PROXIES) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) {
+        const t = await res.text();
+        if (t?.trim()) { text = t; break; }
+      }
+    } catch(e) { continue; }
+  }
 
   if (!text?.trim()) {
     setDot('sea-dot', 'gray');
