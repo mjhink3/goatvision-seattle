@@ -837,8 +837,8 @@
       <span class="panel-title"><span class="panel-icon">&#128652;</span> King County Metro &mdash; Key Routes</span>
       <span class="refresh-ts" id="metro-ts">—</span>
     </div>
-    <div id="metro-list"><div class="loading-msg">Loading Metro routes&hellip;</div></div>
-    <div class="metro-footer">Stop: 3rd &amp; Pike / 3rd &amp; Union — next departures · <sup>s</sup> = scheduled only</div>
+    <div id="metro-list"></div>
+    <div class="metro-footer">Estimated departures based on typical frequency &middot; <a href="https://pugetsound.onebusaway.org" target="_blank" rel="noopener">Live tracking: pugetsound.onebusaway.org</a></div>
   </div>
 
   <!-- ── UPCOMING EVENTS ── -->
@@ -2443,99 +2443,58 @@ function renderTransit(arrivalMap) {
 }
 
 // ╔══════════════════════════════════════════════════════════╗
-//  KING COUNTY METRO BUS
+//  KING COUNTY METRO BUS — schedule frequency estimator
 // ╚══════════════════════════════════════════════════════════╝
-const METRO_ROUTES = [
-  { route:'7',  label:'Rainier Ave',      stopId:'1_619' },
-  { route:'40', label:'South Lake Union', stopId:'1_619' },
+const METRO_SCHEDULES = [
+  { route:'7',   label:'Prentice St / Rainier Beach',    peak:10, offpeak:15, night:30 },
+  { route:'8',   label:'Mt Baker / Uptown',              peak:12, offpeak:15, night:30 },
+  { route:'40',  label:'Northgate / South Lake Union',   peak:10, offpeak:15, night:20 },
+  { route:'44',  label:'Ballard / Montlake',             peak:12, offpeak:15, night:30 },
+  { route:'48',  label:'U District / Columbia City',     peak:12, offpeak:15, night:30 },
+  { route:'62',  label:'Sand Point / Downtown',          peak:12, offpeak:15, night:30 },
+  { route:'101', label:'Renton / Downtown Seattle',      peak:10, offpeak:20, night:30 },
+  { route:'150', label:'Kent / Downtown Seattle',        peak:10, offpeak:20, night:30 },
 ];
-const _metroDelay = ms => new Promise(r => setTimeout(r, ms));
 
-async function fetchMetro() {
-  try {
-    // Log all agencies so we can identify the correct King County Metro agency ID
-    try {
-      const agRes = await fetch(`${OBA_BASE}/agencies-with-coverage.json?key=${CONFIG.OBA_KEY || CITY_CONFIG.obaKey || 'TEST'}`);
-      const agData = await agRes.json();
-      console.log('[OBA] agencies:', JSON.stringify(agData.data.list.map(a => ({ id: a.id, name: a.name }))));
-    } catch(e) { console.warn('[OBA] agencies fetch failed:', e.message); }
-
-    const uniqueStops = [...new Set(METRO_ROUTES.map(r => r.stopId))];
-    const stopData = new Map();
-
-    for (let i = 0; i < uniqueStops.length; i++) {
-      if (i > 0) await _metroDelay(500);
-      const sid = uniqueStops[i];
-      try {
-        const d = await obaFetch(
-          `/arrivals-and-departures-for-stop/${encodeURIComponent(sid)}.json?minutesBefore=0&minutesAfter=120`
-        );
-        const arrs = d.entry?.arrivalsAndDepartures || [];
-        stopData.set(sid, arrs);
-        if (sid === '1_619') {
-          console.log('[Metro] ALL routes at 1_619:', JSON.stringify(arrs.map(a => a.routeShortName)));
-        }
-      } catch(e) {
-        console.warn(`[Metro] stop ${sid} failed:`, e.message);
-      }
-    }
-
-    const now = Date.now();
-    const rows = METRO_ROUTES.map(route => {
-      const allArrs = stopData.get(route.stopId) || [];
-      const deps = allArrs
-        .filter(a => (a.predictedDepartureTime || a.scheduledDepartureTime || 0) > now)
-        .slice(0, 3)
-        .map(a => {
-          const pred  = a.predictedDepartureTime || 0;
-          const sched = a.scheduledDepartureTime || 0;
-          const depMs = pred || sched;
-          const mins  = Math.max(0, Math.round((depMs - now) / 60000));
-          const delay = (pred && sched) ? Math.round((pred - sched) / 60000) : null;
-          return { mins, delay, hasLive: !!pred };
-        });
-      return { ...route, deps };
-    });
-
-    renderMetro(rows);
-    setDot('metro-dot', 'green');
-    const tsEl = document.getElementById('metro-ts');
-    if (tsEl) tsEl.textContent = `Refreshed ${ts()}`;
-  } catch(e) {
-    console.warn('[Metro] fetch failed:', e.message);
-    setDot('metro-dot', 'red');
-  }
+function getMetroFreq(route) {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun, 6=Sat
+  const h = now.getHours() + now.getMinutes() / 60;
+  const isWeekend = dow === 0 || dow === 6;
+  if (isWeekend || h < 6 || h >= 22) return route.night;
+  if ((h >= 6 && h < 9) || (h >= 15 && h < 19)) return route.peak;
+  return route.offpeak;
 }
 
-function renderMetro(rows) {
+function getNextDepartures(freqMins) {
+  const now = new Date();
+  const elapsedInCycle = (now.getMinutes() % freqMins) + now.getSeconds() / 60;
+  const minsUntilNext = freqMins - elapsedInCycle;
+  return [
+    Math.round(minsUntilNext),
+    Math.round(minsUntilNext + freqMins),
+    Math.round(minsUntilNext + freqMins * 2),
+  ];
+}
+
+function renderMetroSchedule() {
   const el = document.getElementById('metro-list');
   if (!el) return;
-  el.innerHTML = rows.map(route => {
-    let depsHtml;
-    if (!route.deps.length) {
-      depsHtml = `<span class="metro-nodep">No upcoming</span>`;
-    } else {
-      depsHtml = route.deps.map((d, i) => {
-        const minTxt = d.mins <= 1 ? 'Now' : `${d.mins}m`;
-        let statusHtml;
-        if (!d.hasLive) {
-          statusHtml = `<span class="metro-sched">s</span>`;
-        } else if (d.delay !== null && d.delay > 2) {
-          statusHtml = `<span class="metro-late">+${d.delay}m</span>`;
-        } else if (d.delay !== null && d.delay < -1) {
-          statusHtml = `<span class="metro-early">&#8722;${Math.abs(d.delay)}m</span>`;
-        } else {
-          statusHtml = `<span class="metro-ontime">&#10003;</span>`;
-        }
-        return `${i > 0 ? '<span class="metro-depdiv">&middot;</span>' : ''}<span class="metro-dep">${minTxt} ${statusHtml}</span>`;
-      }).join('');
-    }
+  el.innerHTML = METRO_SCHEDULES.map(route => {
+    const freq = getMetroFreq(route);
+    const nexts = getNextDepartures(freq);
+    const depsHtml = nexts.map((m, i) => {
+      const txt = m <= 1 ? '~Now' : `~${m}m`;
+      return `${i > 0 ? '<span class="metro-depdiv">&middot;</span>' : ''}<span class="metro-dep">${txt}</span>`;
+    }).join('');
     return `<div class="metro-row">
       <span class="metro-badge">${route.route}</span>
       <span class="metro-name">${route.label}</span>
       <span class="metro-deps">${depsHtml}</span>
     </div>`;
   }).join('');
+  const tsEl = document.getElementById('metro-ts');
+  if (tsEl) tsEl.textContent = `Updated ${ts()}`;
 }
 
 // ╔══════════════════════════════════════════════════════════╗
@@ -3141,8 +3100,8 @@ async function init() {
   fetchFerry();
   fetchTide();
   await fetchTransit();
-  await new Promise(r => setTimeout(r, 2000));
-  fetchMetro();
+  renderMetroSchedule();
+  setDot('metro-dot', 'amber');
   fetchTravelTimes();
   fetchScenicCams();
   fetchEvents();
@@ -3162,8 +3121,8 @@ async function init() {
   setInterval(fetchEvents,         60 * 60 * 1000);            // schedule rarely changes
   setInterval(fetchTicketmaster,   60 * 60 * 1000);            // Ticketmaster — same cadence
   setInterval(fetchTide,      10 * 60 * 1000);
-  setInterval(fetchTransit,   90 * 1000);
-  setInterval(fetchMetro,     60 * 1000); // Metro bus — 60s refresh
+  setInterval(fetchTransit,       90 * 1000);
+  setInterval(renderMetroSchedule, 60 * 1000);
   setInterval(refreshAllCams,  60 * 1000);       // refresh all cam images every 60s
   setInterval(fetchScenicCams, 10 * 60 * 1000); // re-fetch full cam list every 10 min
   setInterval(fetchSeismic,    5  * 60 * 1000); // USGS earthquake feed
