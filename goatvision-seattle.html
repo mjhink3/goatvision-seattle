@@ -2554,14 +2554,14 @@ const LINK_MAP_STNS = [
   {n:'Kent/Des Moines',  x:200,y:415, ln:'1 Line',ix:false,ls:'l'},
   {n:'Federal Way',      x:200,y:435, ln:'1 Line',ix:false,ls:'r'},
   // 2 Line (branches east from Int'l Dist)
-  {n:'Judkins Park',     x:350,y:395, ln:'2 Line',ix:false,ls:'b'},
-  {n:'Mercer Island',    x:400,y:395, ln:'2 Line',ix:false,ls:'b'},
-  {n:'South Bellevue',   x:450,y:380, ln:'2 Line',ix:false,ls:'b'},
-  {n:'East Main',        x:490,y:365, ln:'2 Line',ix:false,ls:'b'},
-  {n:'Bellevue Downtown',x:520,y:350, ln:'2 Line',ix:false,ls:'b'},
-  {n:'Overlake Village', x:555,y:330, ln:'2 Line',ix:false,ls:'b'},
-  {n:'Redmond Technology',x:590,y:315,ln:'2 Line',ix:false,ls:'b'},
-  {n:'Downtown Redmond', x:600,y:470, ln:'2 Line',ix:false,ls:'a',lx:560,ly:465,lsize:8},
+  {n:'Judkins Park',     x:340,y:390, ln:'2 Line',ix:false,ls:'b',lx:345,ly:405},
+  {n:'Mercer Island',    x:390,y:385, ln:'2 Line',ix:false,ls:'b',lx:390,ly:400},
+  {n:'South Bellevue',   x:430,y:375, ln:'2 Line',ix:false,ls:'b',lx:430,ly:390},
+  {n:'East Main',        x:465,y:360, ln:'2 Line',ix:false,ls:'b',lx:465,ly:375},
+  {n:'Bellevue Downtown',x:495,y:340, ln:'2 Line',ix:false,ls:'b',lx:495,ly:355},
+  {n:'Overlake Village', x:530,y:310, ln:'2 Line',ix:false,ls:'b',lx:535,ly:325},
+  {n:'Redmond Technology',x:565,y:285,ln:'2 Line',ix:false,ls:'b',lx:570,ly:300},
+  {n:'Downtown Redmond', x:590,y:260, ln:'2 Line',ix:false,ls:'a',lx:555,ly:252,lsize:8},
 ];
 
 function lmLatToY(lat) {
@@ -2618,7 +2618,7 @@ function renderLinkMap(byLine) {
 
   // --- Schematic lines ---
   const line1 = `<line x1="200" y1="20" x2="200" y2="435" stroke="#00a1de" stroke-width="4" stroke-linecap="round"/>`;
-  const l2pts  = [[300,395],[350,395],[400,395],[450,380],[490,365],[520,350],[555,330],[590,315],[600,470]].map(p=>p.join(',')).join(' ');
+  const l2pts  = [[300,395],[340,390],[390,385],[430,375],[465,360],[495,340],[530,310],[565,285],[590,260]].map(p=>p.join(',')).join(' ');
   const line2 = `<polyline points="${l2pts}" stroke="#e31837" stroke-width="4" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
 
   // --- Station dots + labels ---
