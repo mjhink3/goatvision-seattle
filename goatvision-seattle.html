@@ -241,7 +241,7 @@
   }
   .tt-filter-btn:hover, .tt-filter-btn.active { background:var(--blue-dim); border-color:var(--blue); color:var(--text-bright); }
   #tt-list { max-height:420px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
-  .tt-row { display:grid; grid-template-columns:52px 1fr auto auto 56px; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border); transition:background 0.1s; }
+  .tt-row { display:grid; grid-template-columns:52px 1fr auto auto 56px auto; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border); transition:background 0.1s; }
   .tt-row:last-child { border-bottom:none; }
   .tt-row:hover { background:var(--bg3); }
   .tt-tag  { font-size:9px; font-weight:700; letter-spacing:0.05em; color:var(--blue); white-space:nowrap; }
@@ -254,6 +254,14 @@
   .tt-warn { background:rgba(240,165,0,0.12);  color:var(--amber); }
   .tt-bad  { background:rgba(230,57,70,0.12);  color:var(--red);   }
   .tt-group-header { padding:4px 10px; font-size:9px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--blue); background:var(--bg3); border-bottom:1px solid var(--border); }
+  .tt-pred-badge { font-size:8px; font-weight:600; padding:2px 5px; border-radius:2px; white-space:nowrap; cursor:default; letter-spacing:0.03em; min-width:60px; text-align:center; display:inline-block; }
+  .tt-pred-amber { background:rgba(240,165,0,0.12); color:var(--amber); border:1px solid rgba(240,165,0,0.25); }
+  .tt-pred-green { background:rgba(61,214,42,0.10); color:var(--green); border:1px solid rgba(61,214,42,0.25); }
+  .tt-pred-conf-low       { opacity:0.55; font-style:italic; }
+  .tt-pred-conf-medium    { opacity:0.72; }
+  .tt-pred-conf-high      { }
+  .tt-pred-conf-very-high { font-weight:800; }
+  .tt-pred-note { padding:5px 10px 4px; font-size:8px; color:var(--text-dim); font-style:italic; border-top:1px solid var(--border); }
 
   /* ── SCENIC CAMERAS GRID ── */
   #scenic-grid { display:grid; grid-template-columns:repeat(3,1fr); }
@@ -541,6 +549,7 @@
     .tt-cur   { order: 4; margin-left: auto; font-size: 15px; text-align: right; }
     .tt-avg   { display: none; }
     .tt-badge { order: 5; flex: 0 0 auto; align-self: center; }
+    .tt-pred-badge { display: none; }
 
     /* ── DRIVE WINDOW: 6-bar grid, no horizontal overflow ── */
     #drive-chart-wrap { overflow-x: hidden; }
@@ -2706,6 +2715,7 @@ async function fetchLinkVehicles() {
   const byLine = { '1 Line': [], '2 Line': [] };
   const seen = new Set();
 
+  // 1 Line positions from arrival data (already fetched by fetchTransit)
   for (const a of _transitArrivals) {
     const pos = a.tripStatus?.position;
     if (!pos?.lat || !pos?.lon) continue;
@@ -2721,7 +2731,27 @@ async function fetchLinkVehicles() {
     byLine[info.name].push({ lat: pos.lat, lon: pos.lon, arrow, color: info.color });
   }
 
-  console.log(`[LinkMap] from arrivals: 1 Line: ${byLine['1 Line'].length}, 2 Line: ${byLine['2 Line'].length}`);
+  // 2 Line positions from direct OBA vehicles-for-route fetch
+  try {
+    await new Promise(r => setTimeout(r, 1000));
+    const res = await fetch(
+      `https://api.pugetsound.onebusaway.org/api/where/vehicles-for-route/40_102576.json?key=TEST`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const vehicles = data.data?.list || [];
+      for (const v of vehicles) {
+        const lat = v.location?.lat;
+        const lon = v.location?.lon;
+        if (!lat || !lon) continue;
+        const headsign = v.tripStatus?.headsign || '';
+        const arrow = /redmond/i.test(headsign) ? '→' : '←';
+        byLine['2 Line'].push({ lat, lon, color: '#e31837', arrow });
+      }
+    }
+  } catch(e) { /* silent fail */ }
+
+  console.log(`[LinkMap] 1 Line: ${byLine['1 Line'].length}, 2 Line: ${byLine['2 Line'].length}`);
   renderLinkMap(byLine);
   const tsEl = document.getElementById('link-map-ts');
   if (tsEl) tsEl.textContent = `Updated ${ts()}`;
@@ -2914,6 +2944,28 @@ async function fetchTravelTimes() {
   }
 }
 
+function getWeatherBucket(code) {
+  if ([71,73,75,77,85,86].includes(code))           return 'snow';
+  if ([55,65,82].includes(code))                     return 'heavy_rain';
+  if ([51,53,61,63,66,67,80,81].includes(code))      return 'rain';
+  return 'clear';
+}
+
+async function getTransitPrediction(routeId) {
+  if (!_supa) return null;
+  try {
+    const now  = new Date();
+    const { data, error } = await _supa.rpc('get_transit_baseline', {
+      p_route_id:       String(routeId),
+      p_hour:           now.getHours(),
+      p_dow:            now.getDay(),
+      p_weather_bucket: getWeatherBucket(weatherData?.current?.weather_code || 0),
+    });
+    if (error || !data?.length) return null;
+    return data[0];
+  } catch { return null; }
+}
+
 async function renderTravelTimes() {
   const filtered = ttRoadFilter==='ALL' ? allTravelTimes : allTravelTimes.filter(r=>r._road===ttRoadFilter);
   if (!filtered.length) { document.getElementById('tt-list').innerHTML=`<div class="loading-msg">No routes for ${ttRoadFilter}</div>`; return; }
@@ -2937,15 +2989,67 @@ async function renderTravelTimes() {
     const ud = parseDotNetDate(r.TimeUpdated);
     const name = r.Name.replace(/\s*(HOV|EL)\s*$/i,'').trim();
     const avgDisplay = baseline ? `7d avg: ${baseline.avg}m` : `avg ${avg}m`;
-    html+=`<div class="tt-row" title="${r.Description||r.Name}${ud?' · Updated '+minsAgo(ud):''}">
+    html+=`<div class="tt-row" id="tt-row-${r.TravelTimeID}" title="${r.Description||r.Name}${ud?' · Updated '+minsAgo(ud):''}">
       <span class="tt-tag">${r._road} ${r._dir}</span>
       <span class="tt-name">${name}</span>
       <span class="tt-cur">${cur}<span class="tt-cur-unit">m</span></span>
       <span class="tt-avg">${avgDisplay}</span>
       <span class="tt-badge ${bc}">${bt}</span>
+      <span id="tt-pred-${r.TravelTimeID}" class="tt-pred"></span>
     </div>`;
   }
   document.getElementById('tt-list').innerHTML = html;
+
+  // Non-blocking: fetch predictions per-route and update badges as they resolve
+  if (_supa) {
+    const predPromises = filtered.map(r =>
+      getTransitPrediction(r.TravelTimeID).then(pred => ({ id: r.TravelTimeID, pred })).catch(() => null)
+    );
+    Promise.allSettled(predPromises).then(results => {
+      let hasLowConf = false, maxSamples = 0;
+      for (const res of results) {
+        if (res.status !== 'fulfilled' || !res.value) continue;
+        const { id, pred } = res.value;
+        if (!pred) continue;
+        const el = document.getElementById(`tt-pred-${id}`);
+        if (!el) continue;
+
+        const delta = pred.avg_delta ?? 0;
+        const conf  = pred.confidence || 'low';
+        const count = pred.sample_count || 0;
+
+        let badgeColor, badgeText;
+        if      (delta > 2)  { badgeColor = 'tt-pred-amber'; badgeText = `Hist: +${Math.round(delta)}m`; }
+        else if (delta < -2) { badgeColor = 'tt-pred-green'; badgeText = `Hist: −${Math.abs(Math.round(delta))}m`; }
+        else                 { badgeColor = 'tt-pred-green'; badgeText = 'Hist: On time'; }
+
+        const confClass = conf === 'low'       ? 'tt-pred-conf-low'
+                        : conf === 'medium'    ? 'tt-pred-conf-medium'
+                        : conf === 'very_high' ? 'tt-pred-conf-very-high'
+                        :                       'tt-pred-conf-high';
+
+        const tooltip   = `Based on ${count} similar condition${count !== 1 ? 's' : ''} · Confidence: ${conf.replace('_', ' ')}`;
+        const asterisk  = conf === 'low' ? '*' : '';
+
+        el.innerHTML = `<span class="tt-pred-badge ${badgeColor} ${confClass}" title="${tooltip}">${badgeText}${asterisk}</span>`;
+
+        if (conf === 'low') { hasLowConf = true; maxSamples = Math.max(maxSamples, count); }
+      }
+
+      // Low-confidence footnote at panel bottom
+      const listEl = document.getElementById('tt-list');
+      const oldNote = document.getElementById('tt-pred-note');
+      if (oldNote) oldNote.remove();
+      if (hasLowConf && listEl) {
+        const approxHours = Math.max(1, Math.round(maxSamples / 30));
+        const note = document.createElement('div');
+        note.id        = 'tt-pred-note';
+        note.className = 'tt-pred-note';
+        note.textContent = `* Predictions improve as data accumulates · Currently ${approxHours} hour${approxHours !== 1 ? 's' : ''} of historical data`;
+        listEl.appendChild(note);
+      }
+    });
+  }
 }
 
 document.querySelectorAll('.tt-filter-btn').forEach(btn => {
