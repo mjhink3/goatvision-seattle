@@ -576,7 +576,11 @@
   .metro-late { font-size:8px; font-weight:700; color:var(--red); }
   .metro-early { font-size:8px; font-weight:400; color:var(--teal); }
   .metro-sched { font-size:7px; font-style:italic; color:var(--text-dim); font-weight:400; }
+  .metro-col-header { display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:8px; padding:5px 10px; border-bottom:1px solid var(--border); }
+  .metro-col-label { font-size:8px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); }
+  .metro-col-label.right { font-style:italic; }
   .metro-footer { padding:5px 10px; font-size:9px; color:var(--text-dim); border-top:1px solid var(--border); }
+  .metro-footer-warn { color:var(--amber); }
 
   /* ══════════════════════════════════════════════════════════
      MOBILE PORTRAIT — max-width 480px
@@ -945,11 +949,16 @@
   <!-- ── KING COUNTY METRO ── -->
   <div class="panel" id="metro-panel">
     <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128652;</span> King County Metro &mdash; Key Routes</span>
+      <span class="panel-title"><span class="panel-icon">&#128652;</span> King County Metro &mdash; Key Routes <span style="font-size:8px;font-weight:700;letter-spacing:0.08em;padding:2px 5px;border:1px solid var(--amber);color:var(--amber);background:rgba(240,165,0,0.08);vertical-align:middle;margin-left:4px;">EST</span></span>
       <span class="refresh-ts" id="metro-ts">—</span>
     </div>
+    <div class="metro-col-header">
+      <span class="metro-col-label">Route</span>
+      <span></span>
+      <span class="metro-col-label right">Est. Next Departures (Schedule-Based)</span>
+    </div>
     <div id="metro-list"></div>
-    <div class="metro-footer">Estimated departures based on typical frequency &middot; <a href="https://pugetsound.onebusaway.org" target="_blank" rel="noopener">Live tracking: pugetsound.onebusaway.org</a></div>
+    <div class="metro-footer"><span class="metro-footer-warn">&#9888;</span> Schedule estimates only &mdash; not live GPS tracking &middot; <a href="https://pugetsound.onebusaway.org" target="_blank" rel="noopener">For real-time arrivals: pugetsound.onebusaway.org</a></div>
   </div>
 
   <!-- ── UPCOMING EVENTS ── -->
@@ -3039,7 +3048,8 @@ function renderMetroSchedule() {
     const nexts = getNextDepartures(freq);
     const depsHtml = nexts.map((m, i) => {
       const txt = m <= 1 ? '~Now' : `~${m}m`;
-      return `${i > 0 ? '<span class="metro-depdiv">&middot;</span>' : ''}<span class="metro-dep">${txt}</span>`;
+      const prefix = i === 0 ? '<span class="metro-sched">in</span> ' : '<span class="metro-depdiv">&middot;</span>';
+      return `${prefix}<span class="metro-dep">${txt}</span>`;
     }).join('');
     return `<div class="metro-row">
       <span class="metro-badge">${route.route}</span>
