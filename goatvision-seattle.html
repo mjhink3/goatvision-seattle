@@ -825,7 +825,7 @@
   <!-- ── LINK LIGHT RAIL ── -->
   <div class="panel" id="transit-panel">
     <div class="panel-header">
-      <span class="panel-title"><span class="panel-icon">&#128650;</span> Link Light Rail — All Stations</span>
+      <span class="panel-title"><span class="panel-icon">&#128650;</span> Link Light Rail — Key Stations</span>
       <span class="refresh-ts" id="transit-ts">—</span>
     </div>
     <div id="transit-content"><div class="loading-msg">Connecting to OneBusAway…</div></div>
@@ -2367,95 +2367,78 @@ const LINK_COLORS = {
   '1 Line':'#00a7e1','2 Line':'#d60027','3 Line':'#6f2c91','Tacoma Link':'#e07000',
 };
 
+const LINK_KEY_STOPS = [
+  { id:'40_990006', name:'Westlake' },
+  { id:'40_99101',  name:'Capitol Hill' },
+  { id:'40_99111',  name:'U District' },
+  { id:'40_99103',  name:'Univ. of Washington' },
+  { id:'40_99904',  name:'SeaTac / Airport' },
+  { id:'40_99260',  name:'Northgate' },
+  { id:'40_99610',  name:'Bellevue Downtown' },
+  { id:'40_99914',  name:'Redmond Technology' },
+];
+
 async function fetchTransit() {
   try {
-    const routes = await getLinkRoutes();
-    if (!routes.length) throw new Error('No Link routes found');
-    const routeStops = await Promise.all(routes.map(async r => {
-      try { return { route:r, directions: await getLinkStops(r.id) }; }
-      catch(e) { return { route:r, directions:[] }; }
-    }));
-
-    const keyStopIds = new Set();
-    for (const {directions} of routeStops)
-      for (const {stops} of directions)
-        for (const stop of stops) {
-          const n = (stop.name||'').toLowerCase();
-          if (KEY_STATION_PATTERNS.some(p=>n.includes(p))) keyStopIds.add(stop.id);
-        }
-
     const arrivalMap = new Map();
-    const settled = await Promise.allSettled([...keyStopIds].map(async sid => {
-      const d = await obaFetch(`/arrivals-and-departures-for-stop/${encodeURIComponent(sid)}.json?minutesBefore=1&minutesAfter=60`);
-      const arrs = (d.entry?.arrivalsAndDepartures||[])
-        .filter(a => routes.some(r=>r.id===a.routeId))
-        .slice(0,3)
-        .map(a => {
-          const ms = a.predictedArrivalTime || a.scheduledArrivalTime || 0;
-          const mins = Math.max(0, Math.round((ms - Date.now()) / 60000));
-          return { mins, sched: !a.predictedArrivalTime };
-        });
-      return { sid, arrivals: arrs };
-    }));
-    for (const r of settled)
-      if (r.status==='fulfilled') arrivalMap.set(r.value.sid, r.value.arrivals);
 
-    // Determine whether live predictions exist (vs. schedule-only) for Ops Brief
-    let hasLiveData = false;
-    for (const arrs of arrivalMap.values()) {
-      if (arrs.some(a => !a.sched)) { hasLiveData = true; break; }
+    for (let i = 0; i < LINK_KEY_STOPS.length; i++) {
+      if (i > 0) await new Promise(r => setTimeout(r, 300));
+      const { id } = LINK_KEY_STOPS[i];
+      try {
+        const d = await obaFetch(
+          `/arrivals-and-departures-for-stop/${encodeURIComponent(id)}.json?minutesBefore=1&minutesAfter=60`
+        );
+        const arrs = (d.entry?.arrivalsAndDepartures || [])
+          .slice(0, 4)
+          .map(a => {
+            const ms   = a.predictedArrivalTime || a.scheduledArrivalTime || 0;
+            const mins = Math.max(0, Math.round((ms - Date.now()) / 60000));
+            return { mins, sched: !a.predictedArrivalTime, dest: a.tripHeadsign || '' };
+          });
+        arrivalMap.set(id, arrs);
+      } catch(e) {
+        console.warn(`[Transit] stop ${id} failed:`, e.message);
+      }
     }
+
+    let hasLiveData = false;
+    for (const arrs of arrivalMap.values())
+      if (arrs.some(a => !a.sched)) { hasLiveData = true; break; }
     transitHasLivePredictions = hasLiveData;
     _brief.transit = true;
 
-    renderTransit(routeStops, arrivalMap);
-    setDot('transit-dot','green');
+    renderTransit(arrivalMap);
+    setDot('transit-dot', 'green');
     document.getElementById('transit-ts').textContent = `Refreshed ${ts()}`;
   } catch(e) {
-    setDot('transit-dot','red');
+    setDot('transit-dot', 'red');
     document.getElementById('transit-content').innerHTML = `<div class="error-msg">&#9888; Transit failed: ${e.message}</div>`;
   }
 }
 
-function renderTransit(routeStops, arrivalMap) {
-  const colsHtml = routeStops.map(({route, directions}) => {
-    const rname = route.shortName || route.longName || route.id;
-    const color = LINK_COLORS[rname] || '#666';
-    const dirsHtml = directions.map(({dirName, stops}) => {
-      const stopsHtml = stops.map(stop => {
-        const isKey = KEY_STATION_PATTERNS.some(p=>(stop.name||'').toLowerCase().includes(p));
-        const arrs  = arrivalMap.get(stop.id) || [];
-        let arrHtml;
-        if (arrs.length) {
-          arrHtml = arrs.map((a,i) => {
-            const cls = a.mins<=1?'mins-now':a.mins<=5?'mins-soon':'';
-            const label = a.mins<=1?'NOW':`${a.mins}m`;
-            return `${i>0?'<span class="transit-sep">·</span>':''}<span class="transit-mins ${cls}">${label}${a.sched?'<sup class="transit-sched">s</sup>':''}</span>`;
-          }).join('');
-        } else if (isKey) {
-          arrHtml = `<span class="transit-no-arr sev-amber">No svc</span>`;
-        } else {
-          arrHtml = `<span class="transit-no-arr">—</span>`;
-        }
-        return `<div class="transit-stop-row ${isKey?'transit-stop-key':''}">
-          <span class="transit-stop-name">${stop.name||stop.id}</span>
-          <div class="transit-stop-arrs">${arrHtml}</div>
-        </div>`;
+function renderTransit(arrivalMap) {
+  const rowsHtml = LINK_KEY_STOPS.map(stop => {
+    const arrs = arrivalMap.get(stop.id) || [];
+    let arrHtml;
+    if (arrs.length) {
+      arrHtml = arrs.slice(0, 2).map((a, i) => {
+        const cls   = a.mins <= 1 ? 'mins-now' : a.mins <= 5 ? 'mins-soon' : '';
+        const label = a.mins <= 1 ? 'NOW' : `${a.mins}m`;
+        const dest  = a.dest ? `<span style="font-size:8px;color:var(--text-dim);margin-left:3px">${a.dest}</span>` : '';
+        return `${i > 0 ? '<span class="transit-sep">·</span>' : ''}<span class="transit-mins ${cls}">${label}${a.sched ? '<sup class="transit-sched">s</sup>' : ''}</span>${dest}`;
       }).join('');
-      return `<div class="transit-dir-label">${dirName}</div>
-              <div class="transit-stops-scroll">${stopsHtml||'<div class="loading-msg">No stops</div>'}</div>`;
-    }).join('');
-    return `<div class="transit-route-col">
-      <div class="transit-route-hdr">
-        <span class="transit-badge" style="background:${color}">${rname}</span>
-        <span class="transit-route-long">${route.longName||''}</span>
-      </div>
-      ${dirsHtml}
+    } else {
+      arrHtml = `<span class="transit-no-arr sev-amber">No svc</span>`;
+    }
+    return `<div class="transit-stop-row transit-stop-key">
+      <span class="transit-stop-name">${stop.name}</span>
+      <div class="transit-stop-arrs">${arrHtml}</div>
     </div>`;
   }).join('');
 
   document.getElementById('transit-content').innerHTML =
-    `<div class="transit-cols-grid">${colsHtml||'<div class="loading-msg" style="padding:20px">No Link routes found</div>'}</div>` +
+    `<div>${rowsHtml}</div>` +
     `<div class="transit-footer"><sup>s</sup> = scheduled · no live prediction</div>`;
 }
 
@@ -2490,7 +2473,7 @@ async function fetchMetro() {
         const arrs = d.entry?.arrivalsAndDepartures || [];
         stopData.set(sid, arrs);
         if (sid === '1_619') {
-          console.log('[Metro] ALL routes at 1_619:', arrs.map(a => a.routeShortName));
+          console.log('[Metro] ALL routes at 1_619:', JSON.stringify(arrs.map(a => a.routeShortName)));
         }
       } catch(e) {
         console.warn(`[Metro] stop ${sid} failed:`, e.message);
