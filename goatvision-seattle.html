@@ -2561,14 +2561,14 @@ const LINK_MAP_STNS = [
   {n:'Bellevue Downtown',x:520,y:350, ln:'2 Line',ix:false,ls:'b'},
   {n:'Overlake Village', x:555,y:330, ln:'2 Line',ix:false,ls:'b'},
   {n:'Redmond Technology',x:590,y:315,ln:'2 Line',ix:false,ls:'b'},
-  {n:'Downtown Redmond', x:615,y:300, ln:'2 Line',ix:false,ls:'a',lx:580,ly:445,lsize:8},
+  {n:'Downtown Redmond', x:600,y:470, ln:'2 Line',ix:false,ls:'a',lx:560,ly:465,lsize:8},
 ];
 
 function lmLatToY(lat) {
   return ((47.92 - lat) / (47.92 - 47.15)) * 620 + 30;
 }
 function lmLonToX(lon) {
-  return ((lon - (-122.45)) / ((-122.10) - (-122.45))) * 520 + 80;
+  return ((lon - (-122.45)) / ((-122.10) - (-122.45))) * 520 - 20;
 }
 
 function lmVehicleArrow(headsign, lineName) {
@@ -2618,7 +2618,7 @@ function renderLinkMap(byLine) {
 
   // --- Schematic lines ---
   const line1 = `<line x1="200" y1="20" x2="200" y2="435" stroke="#00a1de" stroke-width="4" stroke-linecap="round"/>`;
-  const l2pts  = [[300,395],[350,395],[400,395],[450,380],[490,365],[520,350],[555,330],[590,315],[615,300]].map(p=>p.join(',')).join(' ');
+  const l2pts  = [[300,395],[350,395],[400,395],[450,380],[490,365],[520,350],[555,330],[590,315],[600,470]].map(p=>p.join(',')).join(' ');
   const line2 = `<polyline points="${l2pts}" stroke="#e31837" stroke-width="4" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
 
   // --- Station dots + labels ---
