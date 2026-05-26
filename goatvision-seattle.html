@@ -458,6 +458,23 @@
   }
   #hospitals-footer a:hover { color: var(--teal); }
 
+  /* ── KING COUNTY METRO ── */
+  #metro-list { max-height:360px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .metro-row { display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); transition:background 0.1s; }
+  .metro-row:last-child { border-bottom:none; }
+  .metro-row:hover { background:var(--bg3); }
+  .metro-badge { font-size:9px; font-weight:700; letter-spacing:0.04em; color:#0a0a0a; background:var(--amber); padding:2px 4px; text-align:center; white-space:nowrap; }
+  .metro-name { font-size:10px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .metro-deps { display:flex; align-items:center; gap:4px; flex-shrink:0; white-space:nowrap; }
+  .metro-dep { display:inline-flex; align-items:baseline; gap:3px; font-size:10px; font-weight:600; color:var(--text-bright); }
+  .metro-depdiv { font-size:8px; color:var(--border); }
+  .metro-nodep { font-size:10px; color:var(--text-dim); }
+  .metro-ontime { font-size:8px; font-weight:400; color:var(--green); }
+  .metro-late { font-size:8px; font-weight:700; color:var(--red); }
+  .metro-early { font-size:8px; font-weight:400; color:var(--teal); }
+  .metro-sched { font-size:7px; font-style:italic; color:var(--text-dim); font-weight:400; }
+  .metro-footer { padding:5px 10px; font-size:9px; color:var(--text-dim); border-top:1px solid var(--border); }
+
   /* ══════════════════════════════════════════════════════════
      MOBILE PORTRAIT — max-width 480px
      Desktop / tablet layout is completely unchanged below.
@@ -616,6 +633,7 @@
     <span><span class="dot dot-gray"  id="traffic-dot"></span> &#9888; Alerts</span>
     <span><span class="dot dot-gray"  id="ferry-dot"></span> &#9972; Ferries</span>
     <span><span class="dot dot-gray"  id="transit-dot"></span> &#128650; Link Rail</span>
+    <span><span class="dot dot-gray"  id="metro-dot"></span> &#128652; Metro</span>
     <span><span class="dot dot-gray"  id="sfd-dot"></span> &#128658; SFD</span>
     <span><span class="dot dot-gray"  id="tm-dot"></span> &#127915; Events</span>
     <span><span class="dot dot-gray"  id="seismic-dot"></span> &#127755; Seismic</span>
@@ -811,6 +829,16 @@
       <span class="refresh-ts" id="transit-ts">—</span>
     </div>
     <div id="transit-content"><div class="loading-msg">Connecting to OneBusAway…</div></div>
+  </div>
+
+  <!-- ── KING COUNTY METRO ── -->
+  <div class="panel" id="metro-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128652;</span> King County Metro &mdash; Key Routes</span>
+      <span class="refresh-ts" id="metro-ts">—</span>
+    </div>
+    <div id="metro-list"><div class="loading-msg">Loading Metro routes&hellip;</div></div>
+    <div class="metro-footer">Stop: 3rd &amp; Pike / 3rd &amp; Union — next departures · <sup>s</sup> = scheduled only</div>
   </div>
 
   <!-- ── UPCOMING EVENTS ── -->
@@ -2430,6 +2458,94 @@ function renderTransit(routeStops, arrivalMap) {
 }
 
 // ╔══════════════════════════════════════════════════════════╗
+//  KING COUNTY METRO BUS
+// ╚══════════════════════════════════════════════════════════╝
+const METRO_ROUTES = [
+  { num:'7',   name:'Rainier Ave',            stopId:'1_565'   },
+  { num:'40',  name:'South Lake Union',        stopId:'1_2010'  },
+  { num:'44',  name:'Ballard / Montlake',      stopId:'1_26860' },
+  { num:'48',  name:'U District / Col. City',  stopId:'1_29270' },
+  { num:'101', name:'Renton Express',          stopId:'1_619'   },
+  { num:'150', name:'Kent / Southcenter',      stopId:'1_619'   },
+  { num:'255', name:'Kirkland Express',        stopId:'1_490'   },
+  { num:'545', name:'Redmond Express',         stopId:'1_490'   },
+];
+
+async function fetchMetro() {
+  try {
+    const uniqueStops = [...new Set(METRO_ROUTES.map(r => r.stopId))];
+    const stopData = new Map();
+
+    const results = await Promise.allSettled(uniqueStops.map(async sid => {
+      const d = await obaFetch(
+        `/arrivals-and-departures-for-stop/${encodeURIComponent(sid)}.json?minutesBefore=0&minutesAfter=120`
+      );
+      return { sid, arrs: d.entry?.arrivalsAndDepartures || [] };
+    }));
+
+    for (const r of results)
+      if (r.status === 'fulfilled') stopData.set(r.value.sid, r.value.arrs);
+
+    const now = Date.now();
+    const rows = METRO_ROUTES.map(route => {
+      const allArrs = stopData.get(route.stopId) || [];
+      const deps = allArrs
+        .filter(a => a.routeShortName === route.num)
+        .filter(a => (a.predictedDepartureTime || a.scheduledDepartureTime || 0) > now)
+        .slice(0, 3)
+        .map(a => {
+          const pred  = a.predictedDepartureTime || 0;
+          const sched = a.scheduledDepartureTime || 0;
+          const depMs = pred || sched;
+          const mins  = Math.max(0, Math.round((depMs - now) / 60000));
+          const delay = (pred && sched) ? Math.round((pred - sched) / 60000) : null;
+          return { mins, delay, hasLive: !!pred };
+        });
+      return { ...route, deps };
+    });
+
+    renderMetro(rows);
+    setDot('metro-dot', 'green');
+    const tsEl = document.getElementById('metro-ts');
+    if (tsEl) tsEl.textContent = `Refreshed ${ts()}`;
+  } catch(e) {
+    console.warn('[Metro] fetch failed:', e.message);
+    setDot('metro-dot', 'red');
+  }
+}
+
+function renderMetro(rows) {
+  const el = document.getElementById('metro-list');
+  if (!el) return;
+  el.innerHTML = rows.map(route => {
+    let depsHtml;
+    if (!route.deps.length) {
+      depsHtml = `<span class="metro-nodep">No upcoming</span>`;
+    } else {
+      depsHtml = route.deps.map((d, i) => {
+        const minTxt = d.mins <= 1 ? 'Now' : `${d.mins}m`;
+        let statusHtml;
+        if (!d.hasLive) {
+          statusHtml = `<span class="metro-sched">s</span>`;
+        } else if (d.delay !== null && d.delay > 2) {
+          statusHtml = `<span class="metro-late">+${d.delay}m</span>`;
+        } else if (d.delay !== null && d.delay < -1) {
+          statusHtml = `<span class="metro-early">&#8722;${Math.abs(d.delay)}m</span>`;
+        } else {
+          statusHtml = `<span class="metro-ontime">&#10003;</span>`;
+        }
+        return `${i > 0 ? '<span class="metro-depdiv">&middot;</span>' : ''}<span class="metro-dep">${minTxt} ${statusHtml}</span>`;
+      }).join('');
+    }
+    return `<div class="metro-row">
+      <span class="metro-badge">${route.num}</span>
+      <span class="metro-name">${route.name}</span>
+      <span class="metro-deps">${depsHtml}</span>
+    </div>`;
+  }).join('');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
 //  HIGHWAY TRAVEL TIMES (WSDOT — replaces broken camera API)
 // ╚══════════════════════════════════════════════════════════╝
 const TT_ROAD_MAP = {'005':'I-5','090':'I-90','520':'SR-520','405':'I-405','522':'SR-522'};
@@ -3048,6 +3164,7 @@ function init() {
   fetchFerry();
   fetchTide();
   fetchTransit();
+  fetchMetro();
   fetchTravelTimes();
   fetchScenicCams();
   fetchEvents();
@@ -3068,6 +3185,7 @@ function init() {
   setInterval(fetchTicketmaster,   60 * 60 * 1000);            // Ticketmaster — same cadence
   setInterval(fetchTide,      10 * 60 * 1000);
   setInterval(fetchTransit,   90 * 1000);
+  setInterval(fetchMetro,     60 * 1000); // Metro bus — 60s refresh
   setInterval(refreshAllCams,  60 * 1000);       // refresh all cam images every 60s
   setInterval(fetchScenicCams, 10 * 60 * 1000); // re-fetch full cam list every 10 min
   setInterval(fetchSeismic,    5  * 60 * 1000); // USGS earthquake feed
