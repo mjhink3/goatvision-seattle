@@ -2793,11 +2793,11 @@ function renderLinkMap(byLine) {
     <text x="454" y="66" font-family="monospace" font-size="7" fill="var(--text-dim)">= live train (geographically placed)</text>
   </g>`;
 
-  const tLineNote = `<text x="${W/2}" y="445" font-family="monospace" font-size="8" fill="var(--text-dim)" text-anchor="middle">T Line (Tacoma Link) operates as a separate system · not shown</text>`;
+  const tLineNote = `<text x="710" y="448" font-family="monospace" font-size="8" fill="var(--text-dim)" text-anchor="end">T Line (Tacoma Link) operates as a separate system · not shown</text>`;
 
   const statusLine = totalVehicles === 0
-    ? `<text x="${W/2}" y="455" font-family="monospace" font-size="8" fill="var(--text-dim)" text-anchor="middle">No live vehicle data available</text>`
-    : `<text x="${W/2}" y="455" font-family="monospace" font-size="8" fill="var(--text-dim)" text-anchor="middle">${totalVehicles} active train${totalVehicles>1?'s':''} on 1 Line · 2 Line positions unavailable · updated every 60s</text>`;
+    ? `<text x="710" y="458" font-family="monospace" font-size="8" fill="var(--text-dim)" text-anchor="end">No live vehicle data available</text>`
+    : `<text x="710" y="458" font-family="monospace" font-size="8" fill="var(--text-dim)" text-anchor="end">${totalVehicles} active train${totalVehicles>1?'s':''} on 1 Line · 2 Line positions unavailable · updated every 60s</text>`;
 
   el.innerHTML = `<svg width="100%" viewBox="0 0 ${W} ${H}" style="display:block;background:var(--bg2)">
     <rect width="${W}" height="${H}" fill="var(--bg2)"/>
