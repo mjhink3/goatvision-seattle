@@ -2728,30 +2728,7 @@ async function fetchLinkVehicles() {
     byLine[info.name].push({ lat: pos.lat, lon: pos.lon, arrow, color: info.color });
   }
 
-  // 2 Line positions from direct OBA vehicles-for-route fetch
-  try {
-    console.log('[LinkMap] fetching 2 Line vehicles (routeId=40_2LINE)...');
-    await new Promise(r => setTimeout(r, 1000));
-    const res = await fetch(
-      `https://api.pugetsound.onebusaway.org/api/where/vehicles-for-route/40_2LINE.json?key=TEST`
-    );
-    console.log('[LinkMap] 2 Line raw response status:', res.status);
-    if (res.ok) {
-      const data = await res.json();
-      const vehicles = data.data?.list || [];
-      console.log('[LinkMap] 2 Line vehicles count:', vehicles.length);
-      for (const v of vehicles) {
-        const lat = v.location?.lat;
-        const lon = v.location?.lon;
-        if (!lat || !lon) continue;
-        const headsign = v.tripStatus?.headsign || '';
-        const arrow = /redmond/i.test(headsign) ? '→' : '←';
-        byLine['2 Line'].push({ lat, lon, color: '#e31837', arrow });
-      }
-    }
-  } catch(e) { console.warn('[LinkMap] 2 Line fetch failed:', e.message); }
-
-  console.log(`[LinkMap] 1 Line: ${byLine['1 Line'].length}, 2 Line: ${byLine['2 Line'].length}`);
+  console.log(`[LinkMap] 1 Line: ${byLine['1 Line'].length} (2 Line positions unavailable via OBA)`);
   renderLinkMap(byLine);
   const tsEl = document.getElementById('link-map-ts');
   if (tsEl) tsEl.textContent = `Updated ${ts()}`;
@@ -2808,17 +2785,17 @@ function renderLinkMap(byLine) {
   }).join('');
 
   // --- Legend ---
-  const noData = totalVehicles === 0
+  const statusLine = totalVehicles === 0
     ? `<text x="16" y="452" font-family="monospace" font-size="8" fill="var(--text-dim)">No live vehicle data available</text>`
-    : `<text x="16" y="452" font-family="monospace" font-size="8" fill="var(--text-dim)">${totalVehicles} active train${totalVehicles>1?'s':''} · positions updated every 60s</text>`;
+    : `<text x="16" y="452" font-family="monospace" font-size="8" fill="var(--text-dim)">${totalVehicles} active train${totalVehicles>1?'s':''} on 1 Line · 2 Line positions unavailable · updated every 60s</text>`;
 
   const legend = `<g>
     <rect x="10" y="406" width="160" height="38" rx="3" fill="rgba(0,0,0,0.55)" stroke="var(--border)" stroke-width="1"/>
     <rect x="16" y="414" width="12" height="7" rx="1" fill="#00a1de"/><text x="32" y="421" font-family="monospace" font-size="8" fill="var(--text)">1 Line</text>
-    <rect x="80" y="414" width="12" height="7" rx="1" fill="#e31837"/><text x="96" y="421" font-family="monospace" font-size="8" fill="var(--text)">2 Line</text>
+    <rect x="80" y="414" width="12" height="7" rx="1" fill="#e31837"/><text x="96" y="421" font-family="monospace" font-size="8" fill="var(--text-dim)" font-style="italic">2 Line · positions unavailable via OBA</text>
     <rect x="16" y="427" width="12" height="7" rx="1" fill="var(--border)"/><text x="14" y="430" font-family="monospace" font-size="8" fill="#fff" text-anchor="middle">▶</text>
     <text x="32" y="434" font-family="monospace" font-size="7" fill="var(--text-dim)">= live train (geographically placed)</text>
-    ${noData}
+    ${statusLine}
   </g>`;
 
   const tLineNote = `<text x="${W/2}" y="${H-4}" font-family="monospace" font-size="8" fill="var(--text-dim)" text-anchor="middle">T Line (Tacoma Link) operates as a separate system · not shown</text>`;
