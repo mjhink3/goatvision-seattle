@@ -1266,6 +1266,121 @@ async function getHistoricalBaseline(category, locationKey) {
 }
 
 // ╔══════════════════════════════════════════════════════════╗
+//  TELEMETRY WRITES (fire-and-forget to Supabase v2 tables)
+// ╚══════════════════════════════════════════════════════════╝
+function _twx()  { return weatherData?.current ?? {}; }
+function _tnow() { const d = new Date(); return { h: d.getHours(), dow: d.getDay(), mo: d.getMonth() + 1 }; }
+function _todayEvs() {
+  const today = new Date().toDateString();
+  return eventsData.filter(e => e.date.toDateString() === today);
+}
+
+function telemetryTransit(routes) {
+  if (!_supa || !routes.length) return;
+  const wx = _twx(), t = _tnow(), todayEvs = _todayEvs();
+  const isGameDay = todayEvs.length > 0;
+  const gameType  = todayEvs[0]?.team?.sport || null;
+  const rows = routes.map(r => ({
+    route_id:        String(r.TravelTimeID),
+    route_name:      r.Name,
+    current_minutes: r.CurrentTime ?? null,
+    average_minutes: r.AverageTime ?? null,
+    delta_minutes:   (r.CurrentTime != null && r.AverageTime != null) ? r.CurrentTime - r.AverageTime : null,
+    delta_percent:   (r.AverageTime > 0) ? Math.round(((r.CurrentTime - r.AverageTime) / r.AverageTime) * 1000) / 10 : null,
+    hour_of_day:     t.h,
+    day_of_week:     t.dow,
+    weather_code:    wx.weather_code ?? 0,
+    precipitation:   wx.precipitation ?? 0,
+    is_game_day:     isGameDay,
+    game_type:       gameType,
+  }));
+  try {
+    _supa.from('transit_telemetry').insert(rows).then(({ error }) => {
+      if (error) console.warn('[Telemetry] transit_telemetry:', error.message);
+    });
+  } catch(e) { console.warn('[Telemetry] transit_telemetry exception:', e.message); }
+}
+
+function telemetryFerry(vessels) {
+  if (!_supa || !vessels.length) return;
+  const wx = _twx(), t = _tnow();
+  const rows = [];
+  for (const v of vessels) {
+    const routeName = matchRoute(v);
+    if (!routeName) continue;
+    const scheduled = parseDotNetDate(v.ScheduledDeparture || v.DepartingTime);
+    const actual    = parseDotNetDate(v.LeftDock);
+    const isDelayed = !v.AtDock && !!(scheduled && actual && actual > scheduled);
+    const minsLate  = isDelayed ? Math.round((actual - scheduled) / 60000) : null;
+    rows.push({
+      route_name:          routeName,
+      vessel_name:         v.VesselName || null,
+      is_delayed:          isDelayed,
+      minutes_late:        minsLate,
+      scheduled_departure: scheduled?.toISOString() || null,
+      actual_departure:    actual?.toISOString() || null,
+      weather_code:        wx.weather_code ?? 0,
+      wind_speed:          wx.wind_speed_10m ?? 0,
+      precipitation:       wx.precipitation ?? 0,
+      hour_of_day:         t.h,
+      day_of_week:         t.dow,
+    });
+  }
+  if (!rows.length) return;
+  try {
+    _supa.from('ferry_telemetry').insert(rows).then(({ error }) => {
+      if (error) console.warn('[Telemetry] ferry_telemetry:', error.message);
+    });
+  } catch(e) { console.warn('[Telemetry] ferry_telemetry exception:', e.message); }
+}
+
+function telemetrySFD(dispatches) {
+  if (!_supa) return;
+  const wx = _twx(), t = _tnow(), todayEvs = _todayEvs();
+  let medical = 0, fireHazmat = 0, other = 0;
+  for (const d of dispatches) {
+    const { cat } = sfdCategory(d.type);
+    if      (cat === 'Fire / Hazmat')                    fireHazmat++;
+    else if (cat === 'Medical / Aid' || cat === 'MVA')   medical++;
+    else                                                  other++;
+  }
+  try {
+    _supa.from('sfd_telemetry').insert([{
+      window_start:      new Date(Date.now() - 2 * 3600000).toISOString(),
+      total_dispatches:  dispatches.length,
+      medical_count:     medical,
+      fire_hazmat_count: fireHazmat,
+      other_count:       other,
+      hour_of_day:       t.h,
+      day_of_week:       t.dow,
+      weather_code:      wx.weather_code ?? 0,
+      precipitation:     wx.precipitation ?? 0,
+      is_game_day:       todayEvs.length > 0,
+    }]).then(({ error }) => {
+      if (error) console.warn('[Telemetry] sfd_telemetry:', error.message);
+    });
+  } catch(e) { console.warn('[Telemetry] sfd_telemetry exception:', e.message); }
+}
+
+function telemetryAQI(current) {
+  if (!_supa) return;
+  const wx = _twx(), t = _tnow();
+  try {
+    _supa.from('aqi_telemetry').insert([{
+      aqi_value:    current.us_aqi ?? null,
+      smoke_pm25:   current.pm2_5  ?? null,
+      weather_code: wx.weather_code    ?? 0,
+      wind_speed:   wx.wind_speed_10m  ?? 0,
+      hour_of_day:  t.h,
+      day_of_week:  t.dow,
+      month:        t.mo,
+    }]).then(({ error }) => {
+      if (error) console.warn('[Telemetry] aqi_telemetry:', error.message);
+    });
+  } catch(e) { console.warn('[Telemetry] aqi_telemetry exception:', e.message); }
+}
+
+// ╔══════════════════════════════════════════════════════════╗
 //  CORS PROXY CHAIN (required for WSDOT APIs from file://)
 // ╚══════════════════════════════════════════════════════════╝
 const PROXIES = [
@@ -1381,7 +1496,7 @@ const _brief = { weather:false, tt:false, ferry:false, transit:false, nws:false,
 
 async function fetchWeather() {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${CITY_CONFIG.lat}&longitude=${CITY_CONFIG.lon}` +
-    `&current=temperature_2m,precipitation_probability,wind_speed_10m,weather_code,visibility,cloud_cover` +
+    `&current=temperature_2m,relative_humidity_2m,precipitation,precipitation_probability,rain,weather_code,wind_speed_10m,wind_direction_10m,visibility,apparent_temperature,cloud_cover` +
     `&hourly=temperature_2m,precipitation_probability,wind_speed_10m,weather_code` +
     `&daily=sunrise,sunset` +
     `&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_hours=13&forecast_days=1&timezone=${encodeURIComponent(CITY_CONFIG.timezone)}`;
@@ -1515,6 +1630,7 @@ async function fetchAirQuality() {
     const data = await res.json();
     aqiData = data.current;
     snapshotCondition('aqi', CITY_CONFIG.snapshotLocationKey, aqiData.us_aqi ?? 0, aqiData);
+    telemetryAQI(data.current);
     const aqi = aqiData?.us_aqi ?? null;
     setDot('aqi-dot', aqi == null ? 'gray' : aqi <= 50 ? 'green' : aqi <= 100 ? 'amber' : 'red');
     // Re-render conditions strip with AQI cells appended
@@ -1607,6 +1723,7 @@ async function fetchSFD() {
     const data = await res.json();
     sfdDispatches = data;
     _brief.sfd = true;
+    telemetrySFD(data);
     renderSFD(data);
     setDot('sfd-dot','green');
     document.getElementById('sfd-ts').textContent = `Refreshed ${ts()} · ${data.length} dispatch${data.length!==1?'es':''} (2 hr)`;
@@ -1714,6 +1831,7 @@ async function fetchFerry() {
     if (!Array.isArray(data)) throw new Error('Non-array response');
     ferryVessels = data;
     _brief.ferry = true;
+    telemetryFerry(data);
     renderFerry(data);
     setDot('ferry-dot','green');
     document.getElementById('ferry-ts').textContent = `Refreshed ${ts()}`;
@@ -2786,6 +2904,7 @@ async function fetchTravelTimes() {
     }
     ttFetchedAt = new Date();
     _brief.tt = true;
+    telemetryTransit(allTravelTimes);
     renderTravelTimes();
     updateTrafficMap();
     document.getElementById('tt-ts').textContent = `Refreshed ${ts(ttFetchedAt)} · ${allTravelTimes.length} routes`;
