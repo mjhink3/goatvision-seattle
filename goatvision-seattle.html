@@ -474,6 +474,74 @@
   }
   #hospitals-footer a:hover { color: var(--teal); }
 
+  /* ── VET PANEL ── */
+  #vet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .vet-card {
+    background: var(--bg2);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .vet-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--teal);
+    font-family: var(--mono);
+    line-height: 1.3;
+  }
+  .vet-name a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .vet-name a:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .vet-addr {
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+  .vet-phone {
+    font-size: 9px;
+  }
+  .vet-phone a {
+    color: var(--green);
+    text-decoration: none;
+  }
+  .vet-phone a:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .vet-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .vet-tag {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 5px;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    background: rgba(240,165,0,0.08);
+    white-space: nowrap;
+  }
+  #vet-footer {
+    padding: 7px 14px;
+    font-size: 9px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+  }
+  #vet-footer a {
+    color: var(--green);
+    text-decoration: none;
+  }
+  #vet-footer a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+
   /* ── KING COUNTY METRO ── */
   #metro-list { max-height:360px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
   .metro-row { display:grid; grid-template-columns:38px 1fr auto; align-items:center; gap:8px; padding:6px 10px; border-bottom:1px solid var(--border); transition:background 0.1s; }
@@ -613,8 +681,8 @@
     .link-col:last-child { border-bottom: none; }
     .link-station-dest { max-width: 120px; }
 
-    /* ── HOSPITALS: single column ── */
-    #hospitals-grid { grid-template-columns: 1fr; }
+    /* ── HOSPITALS / VET: single column ── */
+    #hospitals-grid, #vet-grid { grid-template-columns: 1fr; }
 
     /* ── QUICK LINKS: 2-col grid ── */
     #links-grid { grid-template-columns: repeat(2, 1fr); }
@@ -950,6 +1018,88 @@
     <img id="cam-lb-img" src="" alt="">
     <div id="cam-lb-label"></div>
     <button id="cam-lb-close" onclick="closeLightbox()">&#10005; Close</button>
+  </div>
+
+  <!-- ── EMERGENCY VETERINARY & ANIMAL SERVICES ── -->
+  <div class="panel" id="vet-panel">
+    <div class="panel-header">
+      <span class="panel-title"><span class="panel-icon">&#128062;</span> Emergency Veterinary &amp; Animal Services &mdash; Seattle/Eastside</span>
+    </div>
+    <div id="vet-grid">
+
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://bluepearlvet.com/hospital/seattle-wa/" target="_blank" rel="noopener noreferrer">BluePearl Pet Hospital &mdash; Seattle</a></div>
+        <div class="vet-addr">4020 Stone Way N, Seattle</div>
+        <div class="vet-phone"><a href="tel:+12064486479">(206) 448-6479</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">24/7 Emergency</span>
+          <span class="vet-tag">Critical Care</span>
+          <span class="vet-tag">Surgery</span>
+          <span class="vet-tag">Specialty</span>
+        </div>
+      </div>
+
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://vcahospitals.com/animal-emergency-and-specialty-center-redmond" target="_blank" rel="noopener noreferrer">VCA Animal Emergency &amp; Specialty Center</a></div>
+        <div class="vet-addr">16554 NE 74th St, Redmond</div>
+        <div class="vet-phone"><a href="tel:+14258278727">(425) 827-8727</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">24/7 Emergency</span>
+          <span class="vet-tag">Oncology</span>
+          <span class="vet-tag">Neurology</span>
+          <span class="vet-tag">Cardiology</span>
+        </div>
+      </div>
+
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://www.avs-kirkland.com" target="_blank" rel="noopener noreferrer">Affiliated Veterinary Specialists &mdash; Kirkland</a></div>
+        <div class="vet-addr">13020 NE 85th St, Kirkland</div>
+        <div class="vet-phone"><a href="tel:+14258239111">(425) 823-9111</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">Emergency</span>
+          <span class="vet-tag">Internal Medicine</span>
+          <span class="vet-tag">Surgery</span>
+          <span class="vet-tag">Imaging</span>
+        </div>
+      </div>
+
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://www.accesvet.com" target="_blank" rel="noopener noreferrer">Animal Critical Care &amp; Emergency Services (ACCES)</a></div>
+        <div class="vet-addr">11536 Lake City Way NE, Seattle</div>
+        <div class="vet-phone"><a href="tel:+12063641660">(206) 364-1660</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">24/7 Emergency</span>
+          <span class="vet-tag">Critical Care</span>
+          <span class="vet-tag">Blood Bank</span>
+        </div>
+      </div>
+
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://dovelewis.org" target="_blank" rel="noopener noreferrer">Dove Lewis Emergency Animal Hospital</a></div>
+        <div class="vet-addr">1945 NW Pettygrove St, Portland</div>
+        <div class="vet-phone"><a href="tel:+15032287281">(503) 228-7281</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">24/7 Emergency</span>
+          <span class="vet-tag">Toxicology</span>
+          <span class="vet-tag">ICU</span>
+        </div>
+      </div>
+
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://www.seattle.gov/animal-shelter" target="_blank" rel="noopener noreferrer">Seattle Animal Shelter</a></div>
+        <div class="vet-addr">2061 15th Ave W, Seattle</div>
+        <div class="vet-phone"><a href="tel:+12063867387">(206) 386-7387</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">Lost &amp; Found</span>
+          <span class="vet-tag">Stray Animals</span>
+          <span class="vet-tag">Adoption</span>
+        </div>
+      </div>
+
+    </div>
+    <div id="vet-footer">
+      For poison control: ASPCA Animal Poison Control &mdash; <a href="tel:+18884264435">(888) 426-4435</a> &nbsp;&middot;&nbsp; 24/7
+    </div>
   </div>
 
   <!-- ── QUICK LINKS ── -->
