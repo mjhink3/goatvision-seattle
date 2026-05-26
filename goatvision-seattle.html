@@ -2218,7 +2218,9 @@ async function fetchTide() {
     `&station=${CITY_CONFIG.tideStationId}&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english` +
     `&application=goatvision_seattle&format=json`;
   try {
-    const data = await wsdotFetch(url);
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     if (data.error) throw new Error(data.error.message);
     renderTide(data.predictions || []);
     document.getElementById('tide-ts').textContent = `Refreshed ${ts()}`;
@@ -2461,34 +2463,36 @@ function renderTransit(routeStops, arrivalMap) {
 //  KING COUNTY METRO BUS
 // ╚══════════════════════════════════════════════════════════╝
 const METRO_ROUTES = [
-  { num:'7',   name:'Rainier Ave',            stopId:'1_530'   },
-  { num:'40',  name:'South Lake Union',        stopId:'1_2375'  },
+  { num:'7',   name:'Rainier Ave',            stopId:'1_619'   },
+  { num:'40',  name:'South Lake Union',        stopId:'1_1025'  },
   { num:'44',  name:'Ballard / Montlake',      stopId:'1_26860' },
   { num:'48',  name:'U District / Col. City',  stopId:'1_29270' },
-  { num:'101', name:'Renton Express',          stopId:'1_530'   },
-  { num:'150', name:'Kent / Southcenter',      stopId:'1_530'   },
+  { num:'101', name:'Renton Express',          stopId:'1_619'   },
+  { num:'150', name:'Kent / Southcenter',      stopId:'1_619'   },
   { num:'255', name:'Kirkland Express',        stopId:'1_431'   },
   { num:'545', name:'Redmond Express',         stopId:'1_431'   },
 ];
+const _metroDelay = ms => new Promise(r => setTimeout(r, ms));
 
 async function fetchMetro() {
   try {
     const uniqueStops = [...new Set(METRO_ROUTES.map(r => r.stopId))];
     const stopData = new Map();
 
-    const results = await Promise.allSettled(uniqueStops.map(async sid => {
-      const d = await obaFetch(
-        `/arrivals-and-departures-for-stop/${encodeURIComponent(sid)}.json?minutesBefore=0&minutesAfter=120`
-      );
-      return { sid, arrs: d.entry?.arrivalsAndDepartures || [] };
-    }));
-
-    for (const r of results) {
-      if (r.status === 'fulfilled') {
-        stopData.set(r.value.sid, r.value.arrs);
-        if (r.value.sid === '1_530') {
-          console.log('[Metro] raw arrivalsAndDepartures for 1_530:', JSON.stringify(r.value.arrs.slice(0, 5), null, 2));
+    for (let i = 0; i < uniqueStops.length; i++) {
+      if (i > 0) await _metroDelay(300);
+      const sid = uniqueStops[i];
+      try {
+        const d = await obaFetch(
+          `/arrivals-and-departures-for-stop/${encodeURIComponent(sid)}.json?minutesBefore=0&minutesAfter=120`
+        );
+        const arrs = d.entry?.arrivalsAndDepartures || [];
+        stopData.set(sid, arrs);
+        if (sid === '1_619') {
+          console.log('[Metro] raw arrivalsAndDepartures for 1_619 (first 5):', JSON.stringify(arrs.slice(0, 5), null, 2));
         }
+      } catch(e) {
+        console.warn(`[Metro] stop ${sid} failed:`, e.message);
       }
     }
 
@@ -3068,35 +3072,18 @@ async function fetchVolcano() {
 //  SEA-TAC AIRPORT STATUS (FAA NAS Status API — no key)
 // ╚══════════════════════════════════════════════════════════╝
 async function fetchSEA() {
-  const FAA_URL = 'https://nasstatus.faa.gov/api/airport-status-information';
+  const FAA_PROXIED = 'https://corsproxy.io/?https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
   const el = document.getElementById('sea-content');
 
-  // Try direct fetch, then fall through CORS proxy chain
   let text = null;
   try {
-    const res = await fetch(FAA_URL, { headers: { Accept: 'application/xml, text/xml, */*' } });
+    const res = await fetch(FAA_PROXIED);
     if (res.ok) text = await res.text();
-  } catch(e) { /* CORS blocked — try proxies */ }
-
-  if (!text) {
-    for (const proxy of PROXIES) {
-      try {
-        const res = await fetch(proxy + encodeURIComponent(FAA_URL));
-        if (!res.ok) continue;
-        const t = await res.text();
-        if (t?.trim()) { text = t; break; }
-      } catch(e) { /* try next proxy */ }
-    }
-  }
+  } catch(e) { /* corsproxy failed */ }
 
   if (!text?.trim()) {
     setDot('sea-dot', 'gray');
-    el.innerHTML = `<div class="nws-no-alerts" style="flex-wrap:wrap;gap:4px">
-      <span style="color:var(--text-dim)">&#9432;</span>&nbsp;
-      FAA status unavailable. &nbsp;
-      <a href="https://nasstatus.faa.gov" target="_blank" rel="noopener"
-         style="color:var(--blue);text-decoration:underline">Check nasstatus.faa.gov</a>
-    </div>`;
+    el.innerHTML = `<div class="nws-no-alerts"><span style="color:var(--text-dim)">SEA-TAC: No delay data available</span></div>`;
     document.getElementById('sea-ts').textContent = 'Unavailable';
     return;
   }
