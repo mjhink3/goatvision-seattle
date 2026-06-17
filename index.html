@@ -1666,11 +1666,9 @@ function telemetryAQI(current) {
 //  CORS PROXY CHAIN (required for WSDOT APIs from file://)
 // ╚══════════════════════════════════════════════════════════╝
 const PROXIES = [
+  url => `/api/proxy?url=${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://thingproxy.freeboard.io/fetch/${url}`,
   url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  url => `https://jsonp.afeld.me/?url=${encodeURIComponent(url)}`,
-  url => `https://crossorigin.me/${url}`,
 ];
 
 async function wsdotFetch(url) {
