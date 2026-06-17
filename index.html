@@ -3896,26 +3896,17 @@ async function fetchVolcano() {
 // ╚══════════════════════════════════════════════════════════╝
 async function fetchSEA() {
   const FAA_URL = 'https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
-  const PROXIES = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(FAA_URL)}`,
-    `https://thingproxy.freeboard.io/fetch/${FAA_URL}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(FAA_URL)}`,
-    `https://jsonp.afeld.me/?url=${encodeURIComponent(FAA_URL)}`,
-    `https://crossorigin.me/${FAA_URL}`,
-    FAA_URL
-  ];
+  const proxiedUrl = `/api/proxy?url=${encodeURIComponent(FAA_URL)}`;
   const el = document.getElementById('sea-content');
 
   let text = null;
-  for (const url of PROXIES) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) {
-        const t = await res.text();
-        if (t?.trim()) { text = t; break; }
-      }
-    } catch(e) { continue; }
-  }
+  try {
+    const res = await fetch(proxiedUrl, { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      const t = await res.text();
+      if (t?.trim()) text = t;
+    }
+  } catch(e) {}
 
   if (!text?.trim()) {
     setDot('sea-dot', 'gray');
