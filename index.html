@@ -2,6 +2,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GOATvision Seattle</title>
@@ -582,6 +585,31 @@
   .metro-footer { padding:5px 10px; font-size:9px; color:var(--text-dim); border-top:1px solid var(--border); }
   .metro-footer-warn { color:var(--amber); }
 
+  /* ── TRIP PLANNER ── */
+  .trip-toggle { cursor: pointer; }
+  .trip-arrow  { display: inline-block; transition: transform 0.2s; font-style: normal; margin-right: 5px; font-size: 10px; }
+  #trip-panel.open .trip-arrow { transform: rotate(90deg); }
+  #trip-body   { display: none; padding: 12px; }
+  #trip-panel.open #trip-body { display: block; }
+  .trip-form   { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+  .trip-field  { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+  .trip-label  { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+  .trip-select { font-family: var(--mono); font-size: 10px; background: var(--bg4); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; cursor: pointer; -webkit-appearance: none; appearance: none; width: 100%; }
+  .trip-select:focus { outline: 1px solid var(--blue); border-color: var(--blue); }
+  .trip-btn    { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 14px; background: var(--blue-dim); border: 1px solid var(--blue); color: var(--text-bright); cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0; align-self: flex-end; }
+  .trip-btn:hover { background: var(--blue); }
+  .trip-rec    { padding: 10px 12px; background: var(--bg4); border-left: 3px solid; margin-bottom: 10px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .trip-clear  { border-color: var(--green) !important; color: var(--green); }
+  .trip-slow   { border-color: var(--amber) !important; color: var(--amber); }
+  .trip-heavy  { border-color: var(--red)   !important; color: var(--red); }
+  .trip-corridor-list { border: 1px solid var(--border); margin-bottom: 8px; }
+  .trip-corridor-row  { display: grid; grid-template-columns: 52px 1fr auto auto 60px; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .trip-corridor-row:last-child { border-bottom: none; }
+  .trip-corridor-row:hover { background: var(--bg3); }
+  .trip-gmaps-link { display: block; text-align: right; padding: 6px 2px 0; font-size: 10px; color: var(--teal); text-decoration: none; }
+  .trip-gmaps-link:hover { text-decoration: underline; }
+  .trip-no-data { font-size: 10px; color: var(--text-dim); font-style: italic; padding: 6px 2px; }
+
   /* ══════════════════════════════════════════════════════════
      MOBILE PORTRAIT — max-width 480px
      Desktop / tablet layout is completely unchanged below.
@@ -714,6 +742,12 @@
     .cam-cell-ph  { height: 85px; }
     .cam-cell-label { font-size: 7px; }
 
+    /* ── TRIP PLANNER ── */
+    .trip-corridor-row { grid-template-columns: 44px 1fr auto 52px; }
+    .trip-corridor-row .tt-avg { display: none; }
+    .trip-form { flex-direction: column; }
+    .trip-btn  { width: 100%; justify-content: center; }
+
     /* ── GENERAL ── */
     .panel-header { padding: 5px 8px; }
     .panel-title  { font-size: 8px; }
@@ -830,6 +864,46 @@
     </div>
     <div id="drive-summary"><span class="loading-msg">Calculating…</span></div>
     <div id="drive-chart-wrap"><div id="drive-chart"></div></div>
+  </div>
+
+  <!-- ── TRIP PLANNER ── -->
+  <div class="panel" id="trip-panel">
+    <div class="panel-header trip-toggle" onclick="toggleTripPanel()">
+      <span class="panel-title"><span class="panel-icon"><span class="trip-arrow">&#9654;</span> &#128506;</span> Trip Planner &mdash; Should I Leave Now?</span>
+      <span class="refresh-ts" id="trip-hint">Click to expand</span>
+    </div>
+    <div id="trip-body">
+      <div class="trip-form">
+        <div class="trip-field">
+          <label class="trip-label" for="trip-from">From</label>
+          <select class="trip-select" id="trip-from">
+            <option value="">&#8212; Select origin &#8212;</option>
+            <option>North Seattle / Lynnwood / Everett</option>
+            <option>Downtown Seattle</option>
+            <option>South Seattle / SeaTac / Renton</option>
+            <option>Eastside / Bellevue / Redmond</option>
+            <option>Tacoma / Federal Way</option>
+            <option>West Seattle</option>
+            <option>Kirkland / Bothell</option>
+          </select>
+        </div>
+        <div class="trip-field">
+          <label class="trip-label" for="trip-to">To</label>
+          <select class="trip-select" id="trip-to">
+            <option value="">&#8212; Select destination &#8212;</option>
+            <option>North Seattle / Lynnwood / Everett</option>
+            <option>Downtown Seattle</option>
+            <option>South Seattle / SeaTac / Renton</option>
+            <option>Eastside / Bellevue / Redmond</option>
+            <option>Tacoma / Federal Way</option>
+            <option>West Seattle</option>
+            <option>Kirkland / Bothell</option>
+          </select>
+        </div>
+        <button class="trip-btn" onclick="checkTripRoute()">Check My Route</button>
+      </div>
+      <div id="trip-results"></div>
+    </div>
   </div>
 
   <!-- ── TRAFFIC MAP ── -->
@@ -1592,22 +1666,24 @@ function telemetryAQI(current) {
 //  CORS PROXY CHAIN (required for WSDOT APIs from file://)
 // ╚══════════════════════════════════════════════════════════╝
 const PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-  'https://api.codetabs.com/v1/proxy?quest=',
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://jsonp.afeld.me/?url=${encodeURIComponent(url)}`,
+  url => `https://crossorigin.me/${url}`,
 ];
 
 async function wsdotFetch(url) {
   let lastErr;
   for (const proxy of PROXIES) {
     try {
-      const res = await fetch(proxy + encodeURIComponent(url));
+      const res = await fetch(proxy(url), { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       return JSON.parse(text);
     } catch (e) { lastErr = e; }
   }
-  try { const r = await fetch(url); return await r.json(); } catch (e) { lastErr = e; }
+  try { const r = await fetch(url, { signal: AbortSignal.timeout(5000) }); return await r.json(); } catch (e) { lastErr = e; }
   throw new Error(`All proxies failed: ${lastErr?.message}`);
 }
 
@@ -3387,6 +3463,134 @@ function updateTrafficMap() {
 }
 
 // ╔══════════════════════════════════════════════════════════╗
+//  TRIP PLANNER
+// ╚══════════════════════════════════════════════════════════╝
+const TRIP_MAPS_LABELS = {
+  'North Seattle / Lynnwood / Everett': 'Lynnwood,WA',
+  'Downtown Seattle':                   'Downtown+Seattle,WA',
+  'South Seattle / SeaTac / Renton':    'SeaTac,WA',
+  'Eastside / Bellevue / Redmond':      'Bellevue,WA',
+  'Tacoma / Federal Way':               'Tacoma,WA',
+  'West Seattle':                       'West+Seattle,WA',
+  'Kirkland / Bothell':                 'Kirkland,WA',
+};
+
+function toggleTripPanel() {
+  const panel = document.getElementById('trip-panel');
+  const hint  = document.getElementById('trip-hint');
+  panel.classList.toggle('open');
+  hint.textContent = panel.classList.contains('open') ? 'Click to collapse' : 'Click to expand';
+}
+
+function getTripRoads(from, to) {
+  const isA = r => ['North Seattle / Lynnwood / Everett','Downtown Seattle','South Seattle / SeaTac / Renton','Tacoma / Federal Way','West Seattle'].includes(r);
+  const isB = r => r === 'Eastside / Bellevue / Redmond';
+  const isC = r => r === 'Kirkland / Bothell';
+  if (isA(from) && isA(to))                              return ['I-5'];
+  if ((isA(from) && isB(to)) || (isB(from) && isA(to))) return ['SR-520','I-90','I-405'];
+  if ((isA(from) && isC(to)) || (isC(from) && isA(to))) return ['I-405','SR-522','I-5'];
+  if ((isB(from) && isC(to)) || (isC(from) && isB(to))) return ['I-405','SR-522'];
+  return ['I-5','SR-520','I-90','I-405'];
+}
+
+function getTripDir(from, to) {
+  const isNorth = r => r === 'North Seattle / Lynnwood / Everett';
+  const isSouth = r => ['South Seattle / SeaTac / Renton','Tacoma / Federal Way'].includes(r);
+  const isEast  = r => ['Eastside / Bellevue / Redmond','Kirkland / Bothell'].includes(r);
+  if (!isNorth(from) && isNorth(to))  return '↑';
+  if (isNorth(from)  && !isNorth(to)) return '↓';
+  if (isSouth(from)  && !isSouth(to)) return '↑';
+  if (!isSouth(from) && isSouth(to))  return '↓';
+  if (!isEast(from)  && isEast(to))   return '→';
+  if (isEast(from)   && !isEast(to))  return '←';
+  return null;
+}
+
+function checkTripRoute() {
+  const from = document.getElementById('trip-from').value;
+  const to   = document.getElementById('trip-to').value;
+  const el   = document.getElementById('trip-results');
+
+  if (!from || !to) {
+    el.innerHTML = '<div class="trip-no-data">Please select both an origin and destination.</div>';
+    return;
+  }
+  if (from === to) {
+    el.innerHTML = '<div class="trip-no-data">Origin and destination are the same — you\'re already there!</div>';
+    return;
+  }
+  if (!allTravelTimes.length) {
+    el.innerHTML = '<div class="trip-no-data">Travel time data not yet loaded — try again in a moment.</div>';
+    return;
+  }
+
+  const roads   = getTripRoads(from, to);
+  const prefDir = getTripDir(from, to);
+
+  let matched = allTravelTimes.filter(r => roads.includes(r._road));
+
+  if (prefDir) {
+    matched.sort((a, b) => {
+      const ad = a._dir === prefDir ? 0 : 1;
+      const bd = b._dir === prefDir ? 0 : 1;
+      if (ad !== bd) return ad - bd;
+      return roads.indexOf(a._road) - roads.indexOf(b._road) ||
+             (a.StartPoint?.MilePost ?? 0) - (b.StartPoint?.MilePost ?? 0);
+    });
+  }
+
+  matched = matched.slice(0, 6);
+
+  if (!matched.length) {
+    el.innerHTML = '<div class="trip-no-data">No WSDOT travel time corridors found for this route combination.</div>';
+    return;
+  }
+
+  const ratios = matched.filter(r => (r.AverageTime ?? 0) > 0).map(r => r.CurrentTime / r.AverageTime);
+  let recCls, recStatus, recText;
+  if (!ratios.length) {
+    recCls = 'trip-slow'; recStatus = '—'; recText = 'Insufficient historical average data to assess conditions.';
+  } else {
+    const avg = ratios.reduce((s, v) => s + v, 0) / ratios.length;
+    if (avg < 1.0)      { recCls = 'trip-clear'; recStatus = 'CLEAR'; recText = 'Good time to go — below average traffic on matched corridors.'; }
+    else if (avg < 1.2) { recCls = 'trip-slow';  recStatus = 'SLOW';  recText = 'Acceptable — slightly above normal traffic.'; }
+    else if (avg < 1.5) { recCls = 'trip-slow';  recStatus = 'SLOW';  recText = 'Consider waiting 20–30 min — above average congestion.'; }
+    else                { recCls = 'trip-heavy'; recStatus = 'HEAVY'; recText = 'Heavy traffic — wait if possible.'; }
+  }
+
+  const corridorRows = matched.map(r => {
+    const cur = r.CurrentTime ?? 0;
+    const avg = r.AverageTime ?? 0;
+    const ratio = avg > 0 ? cur / avg : 1;
+    const delta = cur - avg;
+    let bc, bLabel;
+    if (ratio <= 1.1)      { bc = 'tt-ok';   bLabel = 'CLEAR'; }
+    else if (ratio <= 1.5) { bc = 'tt-warn'; bLabel = 'SLOW';  }
+    else                   { bc = 'tt-bad';  bLabel = 'HEAVY'; }
+    const deltaStr = avg > 0 ? (delta > 0 ? `+${delta}m · ` : delta < 0 ? `${delta}m · ` : '') : '';
+    const avgStr   = avg > 0 ? `avg ${avg}m` : '—';
+    const name = r.Name.replace(/\s*(HOV|EL)\s*$/i, '').trim();
+    return `<div class="trip-corridor-row">
+      <span class="tt-tag">${r._road} ${r._dir}</span>
+      <span class="tt-name">${name}</span>
+      <span class="tt-cur">${cur}<span class="tt-cur-unit">m</span></span>
+      <span class="tt-avg">${deltaStr}${avgStr}</span>
+      <span class="tt-badge ${bc}">${bLabel}</span>
+    </div>`;
+  }).join('');
+
+  const mapsFrom = TRIP_MAPS_LABELS[from] || encodeURIComponent(from);
+  const mapsTo   = TRIP_MAPS_LABELS[to]   || encodeURIComponent(to);
+  const mapsUrl  = `https://www.google.com/maps/dir/${mapsFrom}/${mapsTo}`;
+
+  el.innerHTML = `
+    <div class="trip-rec ${recCls}"><strong>${recStatus}</strong>&nbsp;&nbsp;${recText}</div>
+    <div class="trip-corridor-list">${corridorRows}</div>
+    <a class="trip-gmaps-link" href="${mapsUrl}" target="_blank" rel="noopener noreferrer">Get turn-by-turn directions &#8594; (opens Google Maps)</a>
+  `;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
 //  SEATTLE OPS BRIEF (rule-based synthesis — no AI)
 // ╚══════════════════════════════════════════════════════════╝
 function generateOpsBrief() {
@@ -3695,9 +3899,11 @@ async function fetchVolcano() {
 async function fetchSEA() {
   const FAA_URL = 'https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
   const PROXIES = [
-    `https://corsproxy.io/?${encodeURIComponent(FAA_URL)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(FAA_URL)}`,
-    `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(FAA_URL)}`,
+    `https://thingproxy.freeboard.io/fetch/${FAA_URL}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(FAA_URL)}`,
+    `https://jsonp.afeld.me/?url=${encodeURIComponent(FAA_URL)}`,
+    `https://crossorigin.me/${FAA_URL}`,
     FAA_URL
   ];
   const el = document.getElementById('sea-content');
