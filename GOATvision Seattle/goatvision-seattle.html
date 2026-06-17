@@ -1663,23 +1663,24 @@ function telemetryAQI(current) {
 //  CORS PROXY CHAIN (required for WSDOT APIs from file://)
 // ╚══════════════════════════════════════════════════════════╝
 const PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-  'https://thingproxy.freeboard.io/fetch/',
-  'https://api.codetabs.com/v1/proxy?quest=',
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://jsonp.afeld.me/?url=${encodeURIComponent(url)}`,
+  url => `https://crossorigin.me/${url}`,
 ];
 
 async function wsdotFetch(url) {
   let lastErr;
   for (const proxy of PROXIES) {
     try {
-      const res = await fetch(proxy + encodeURIComponent(url));
+      const res = await fetch(proxy(url), { signal: AbortSignal.timeout(5000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       return JSON.parse(text);
     } catch (e) { lastErr = e; }
   }
-  try { const r = await fetch(url); return await r.json(); } catch (e) { lastErr = e; }
+  try { const r = await fetch(url, { signal: AbortSignal.timeout(5000) }); return await r.json(); } catch (e) { lastErr = e; }
   throw new Error(`All proxies failed: ${lastErr?.message}`);
 }
 
@@ -3895,9 +3896,11 @@ async function fetchVolcano() {
 async function fetchSEA() {
   const FAA_URL = 'https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
   const PROXIES = [
-    `https://corsproxy.io/?${encodeURIComponent(FAA_URL)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(FAA_URL)}`,
-    `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(FAA_URL)}`,
+    `https://thingproxy.freeboard.io/fetch/${FAA_URL}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(FAA_URL)}`,
+    `https://jsonp.afeld.me/?url=${encodeURIComponent(FAA_URL)}`,
+    `https://crossorigin.me/${FAA_URL}`,
     FAA_URL
   ];
   const el = document.getElementById('sea-content');
