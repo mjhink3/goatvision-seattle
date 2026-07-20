@@ -3183,7 +3183,10 @@ function ttRoadLabel(r) {
   return TT_ROAD_MAP[rn] || null;
 }
 function ttDir(r) {
-  const ARROW = { N:'↑', S:'↓', E:'→', W:'←' };
+  // E/W use solid pointer glyphs (►/◄), not the thin arrow-line glyphs (→/←) — at the
+  // 9px size .tt-tag renders at, JetBrains Mono's →/← lose their arrowhead to anti-aliasing
+  // and read as a bare hyphen, while ↑/↓ stay legible. ►/◄ stay solid and unambiguous.
+  const ARROW = { N:'↑', S:'↓', E:'►', W:'◄' };
   return ARROW[r.StartPoint?.Direction] || '';
 }
 
@@ -3428,7 +3431,7 @@ function closeLightbox() {
 // ╚══════════════════════════════════════════════════════════╝
 function updateTrafficMap() {
   if (!allTravelTimes.length) return;
-  const DIR_LETTER = { '↑':'N', '↓':'S', '→':'E', '←':'W' };
+  const DIR_LETTER = { '↑':'N', '↓':'S', '►':'E', '◄':'W' };
   function segColor(road, dir) {
     // Check both endpoints, not just the route's precomputed single-owner _road bucket —
     // a route can carry real direction data for two different roads (one per endpoint),
@@ -3444,8 +3447,8 @@ function updateTrafficMap() {
   }
   const segs=[
     ['seg-i5-n','I-5','↑'],['seg-i5-s','I-5','↓'],
-    ['seg-520-e','SR-520','→'],['seg-520-w','SR-520','←'],
-    ['seg-i90-e','I-90','→'],['seg-i90-w','I-90','←'],
+    ['seg-520-e','SR-520','►'],['seg-520-w','SR-520','◄'],
+    ['seg-i90-e','I-90','►'],['seg-i90-w','I-90','◄'],
     ['seg-405-n','I-405','↑'],['seg-405-s','I-405','↓'],
   ];
   for (const [id,road,dir] of segs) {
@@ -3494,8 +3497,8 @@ function getTripDir(from, to) {
   if (isNorth(from)  && !isNorth(to)) return '↓';
   if (isSouth(from)  && !isSouth(to)) return '↑';
   if (!isSouth(from) && isSouth(to))  return '↓';
-  if (!isEast(from)  && isEast(to))   return '→';
-  if (isEast(from)   && !isEast(to))  return '←';
+  if (!isEast(from)  && isEast(to))   return '►';
+  if (isEast(from)   && !isEast(to))  return '◄';
   return null;
 }
 
@@ -3616,7 +3619,7 @@ function generateOpsBrief() {
     if (delay > 15) {
       bullets.push({ color:'red',   text:`Heavy delay on ${worst._road} — +${delay} min above average.` });
     } else if (delay > 5) {
-      const dirs = { '↑':'northbound','↓':'southbound','→':'eastbound','←':'westbound' };
+      const dirs = { '↑':'northbound','↓':'southbound','►':'eastbound','◄':'westbound' };
       const dw   = dirs[worst._dir] ? dirs[worst._dir] + ' ' : '';
       bullets.push({ color:'amber', text:`Moderate ${dw}congestion on ${worst._road}.` });
     } else {
