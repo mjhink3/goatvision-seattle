@@ -926,24 +926,25 @@
         <!-- Lake Sammamish -->
         <rect x="462" y="118" width="7" height="58" fill="rgba(15,30,120,0.12)" rx="3"/>
 
-        <!-- I-5: vertical x=125 -->
-        <line x1="125" y1="8"   x2="125" y2="302" stroke="#15103a" stroke-width="8" stroke-linecap="round"/>
-        <line id="seg-i5-n" x1="125" y1="8"   x2="125" y2="155" stroke="#2a2252" stroke-width="5" stroke-linecap="round"/>
-        <line id="seg-i5-s" x1="125" y1="155" x2="125" y2="302" stroke="#2a2252" stroke-width="5" stroke-linecap="round"/>
+        <!-- I-5: vertical x=125 — two parallel offset lines, one per direction -->
+        <line x1="125" y1="8"   x2="125" y2="302" stroke="#15103a" stroke-width="9" stroke-linecap="round"/>
+        <line id="seg-i5-n" x1="127.5" y1="8"   x2="127.5" y2="302" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <line id="seg-i5-s" x1="122.5" y1="8"   x2="122.5" y2="302" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
 
-        <!-- SR-520: horizontal y=108 -->
-        <line x1="125" y1="108" x2="440" y2="108" stroke="#15103a" stroke-width="7" stroke-linecap="round"/>
-        <line id="seg-520"  x1="125" y1="108" x2="440" y2="108" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <!-- SR-520: horizontal y=108 — two parallel offset lines, one per direction -->
+        <line x1="125" y1="108" x2="440" y2="108" stroke="#15103a" stroke-width="9" stroke-linecap="round"/>
+        <line id="seg-520-e" x1="125" y1="110.5" x2="440" y2="110.5" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <line id="seg-520-w" x1="125" y1="105.5" x2="440" y2="105.5" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
 
-        <!-- I-90: horizontal y=168 -->
-        <line x1="125" y1="168" x2="452" y2="168" stroke="#15103a" stroke-width="7" stroke-linecap="round"/>
-        <line id="seg-i90-e" x1="125" y1="168" x2="365" y2="168" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
-        <line id="seg-i90-b" x1="365" y1="168" x2="452" y2="168" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <!-- I-90: horizontal y=168 — two parallel offset lines, one per direction -->
+        <line x1="125" y1="168" x2="452" y2="168" stroke="#15103a" stroke-width="9" stroke-linecap="round"/>
+        <line id="seg-i90-e" x1="125" y1="170.5" x2="452" y2="170.5" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <line id="seg-i90-w" x1="125" y1="165.5" x2="452" y2="165.5" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
 
-        <!-- I-405: vertical x=365 -->
-        <line x1="365" y1="58"  x2="365" y2="258" stroke="#15103a" stroke-width="7" stroke-linecap="round"/>
-        <line id="seg-405-n" x1="365" y1="58"  x2="365" y2="168" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
-        <line id="seg-405-s" x1="365" y1="168" x2="365" y2="258" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <!-- I-405: vertical x=365 — two parallel offset lines, one per direction -->
+        <line x1="365" y1="58"  x2="365" y2="258" stroke="#15103a" stroke-width="9" stroke-linecap="round"/>
+        <line id="seg-405-n" x1="367.5" y1="58"  x2="367.5" y2="258" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
+        <line id="seg-405-s" x1="362.5" y1="58"  x2="362.5" y2="258" stroke="#2a2252" stroke-width="4" stroke-linecap="round"/>
 
         <!-- Intersections -->
         <circle cx="125" cy="108" r="6" fill="#0d0b1e" stroke="#2a2252" stroke-width="1.5"/>
@@ -983,13 +984,13 @@
         <text x="458" y="172" font-family="monospace" font-size="9" fill="#8a7faa">Issaquah</text>
 
         <!-- Legend -->
-        <rect x="10" y="256" width="104" height="48" fill="rgba(7,6,15,0.88)" rx="3" stroke="#2a2252" stroke-width="1"/>
-        <line x1="18" y1="270" x2="42" y2="270" stroke="#3dd62a" stroke-width="4" stroke-linecap="round"/>
-        <text x="48" y="273" font-family="monospace" font-size="8" fill="#8a7faa">On Time</text>
-        <line x1="18" y1="284" x2="42" y2="284" stroke="#f0a500" stroke-width="4" stroke-linecap="round"/>
-        <text x="48" y="287" font-family="monospace" font-size="8" fill="#8a7faa">Slow</text>
-        <line x1="18" y1="298" x2="42" y2="298" stroke="#e63946" stroke-width="4" stroke-linecap="round"/>
-        <text x="48" y="301" font-family="monospace" font-size="8" fill="#8a7faa">Heavy Delay</text>
+        <rect x="464" y="12" width="104" height="48" fill="rgba(7,6,15,0.88)" rx="3" stroke="#2a2252" stroke-width="1"/>
+        <line x1="472" y1="26" x2="496" y2="26" stroke="#3dd62a" stroke-width="4" stroke-linecap="round"/>
+        <text x="502" y="29" font-family="monospace" font-size="8" fill="#8a7faa">On Time</text>
+        <line x1="472" y1="40" x2="496" y2="40" stroke="#f0a500" stroke-width="4" stroke-linecap="round"/>
+        <text x="502" y="43" font-family="monospace" font-size="8" fill="#8a7faa">Slow</text>
+        <line x1="472" y1="54" x2="496" y2="54" stroke="#e63946" stroke-width="4" stroke-linecap="round"/>
+        <text x="502" y="57" font-family="monospace" font-size="8" fill="#8a7faa">Heavy Delay</text>
       </svg>
     </div>
   </div>
@@ -3427,17 +3428,24 @@ function closeLightbox() {
 // ╚══════════════════════════════════════════════════════════╝
 function updateTrafficMap() {
   if (!allTravelTimes.length) return;
+  const DIR_LETTER = { '↑':'N', '↓':'S', '→':'E', '←':'W' };
   function segColor(road, dir) {
-    const r = allTravelTimes.find(x=>x._road===road&&(!dir||x._dir===dir))
-           || allTravelTimes.find(x=>x._road===road);
+    // Check both endpoints, not just the route's precomputed single-owner _road bucket —
+    // a route can carry real direction data for two different roads (one per endpoint),
+    // e.g. "Seattle-Redmond" is bucketed under I-5 but its EndPoint is genuine SR-520 eastbound.
+    const letter = dir ? DIR_LETTER[dir] : null;
+    const touches = x => TT_ROAD_MAP[x.StartPoint?.RoadName]===road || TT_ROAD_MAP[x.EndPoint?.RoadName]===road;
+    const matches = x => (TT_ROAD_MAP[x.StartPoint?.RoadName]===road && (!letter||x.StartPoint.Direction===letter))
+                       || (TT_ROAD_MAP[x.EndPoint?.RoadName]===road   && (!letter||x.EndPoint.Direction===letter));
+    const r = allTravelTimes.find(matches) || allTravelTimes.find(touches);
     if (!r) return '#2a2252';
     const ratio=(r.AverageTime>0)?r.CurrentTime/r.AverageTime:1;
     return ratio<=1.1?'#3dd62a':ratio<=1.5?'#f0a500':'#e63946';
   }
   const segs=[
     ['seg-i5-n','I-5','↑'],['seg-i5-s','I-5','↓'],
-    ['seg-520','SR-520',null],
-    ['seg-i90-e','I-90','→'],['seg-i90-b','I-90',null],
+    ['seg-520-e','SR-520','→'],['seg-520-w','SR-520','←'],
+    ['seg-i90-e','I-90','→'],['seg-i90-w','I-90','←'],
     ['seg-405-n','I-405','↑'],['seg-405-s','I-405','↓'],
   ];
   for (const [id,road,dir] of segs) {
