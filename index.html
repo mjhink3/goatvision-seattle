@@ -791,11 +791,6 @@
 <!-- ═══════════════════════════════════════════ MAIN ═══ -->
 <div id="main">
 
-  <!-- Config notice -->
-  <div id="config-notice" style="display:none">
-    &#9888; WSDOT key not set. Set <code>WSDOT_KEY</code> in the CONFIG block.
-  </div>
-
   <!-- ── SEATTLE OPS BRIEF (command synthesis layer) ── -->
   <div class="panel" id="ops-brief-panel">
     <div class="panel-header">
@@ -1396,10 +1391,8 @@
 //  CONFIG
 // ╚══════════════════════════════════════════════════════════╝
 const CONFIG = {
-  WSDOT_KEY:        '9086eb9c-b743-432c-a9ca-86e160d0d780',
   OBA_KEY:          'TEST',        // register at developer.onebusaway.org for higher limits
-  TICKETMASTER_KEY: 'EqgsmyF0kcYqZSX1w3tHMFtAVo1kTn9X',
-  SUPABASE_URL:   'https://scsdstpabzkiqnvsskts.supabase.co',              // 
+  SUPABASE_URL:   'https://scsdstpabzkiqnvsskts.supabase.co',              //
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjc2RzdHBhYnpraXFudnNza3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTUxNzcsImV4cCI6MjA5NTI5MTE3N30.HMo41UCsWsCwk75GxoujLcIlwlZDhXPNnLZ1x7K8VV8',           // 
   REFRESH_WEATHER_MS:   5 * 60 * 1000,
   REFRESH_TT_MS:        2 * 60 * 1000,
@@ -2060,9 +2053,10 @@ function renderSFD(dispatches) {
 //  INCIDENTS
 // ╚══════════════════════════════════════════════════════════╝
 async function fetchIncidents() {
-  const url = `https://www.wsdot.wa.gov/Traffic/api/HighwayAlerts/HighwayAlertsREST.svc/GetAlertsAsJson?AccessCode=${CONFIG.WSDOT_KEY}`;
   try {
-    const data = await wsdotFetch(url);
+    const res = await fetch('/api/wsdot?type=alerts');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     renderIncidents(Array.isArray(data) ? data : (data.Alerts || []));
     setDot('traffic-dot','green');
     document.getElementById('incidents-ts').textContent = `Refreshed ${ts()}`;
@@ -2110,9 +2104,9 @@ const FERRY_ROUTE_KEYWORDS = [
 
 async function fetchFerry() {
   try {
-    const data = await wsdotFetch(
-      `https://www.wsdot.wa.gov/ferries/api/vessels/rest/vessellocations?apiaccesscode=${CONFIG.WSDOT_KEY}`
-    );
+    const res = await fetch('/api/wsdot?type=ferries');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     if (!Array.isArray(data)) throw new Error('Non-array response');
     ferryVessels = data;
     _brief.ferry = true;
@@ -2335,22 +2329,15 @@ function getSportEmoji(ev) {
 }
 
 async function fetchTicketmaster() {
-  if (!CONFIG.TICKETMASTER_KEY) { setDot('tm-dot', 'red'); return; }
   const now = new Date();
   const end = new Date(now.getTime() + 14 * 86400000);
   const fmt = d => d.toISOString().split('T')[0];
-  const url = `https://app.ticketmaster.com/discovery/v2/events.json` +
-    `?apikey=${CONFIG.TICKETMASTER_KEY}` +
-    `&city=Seattle&stateCode=WA&radius=15&unit=miles` +
-    `&size=50&sort=date,asc` +
-    `&startDateTime=${fmt(now)}T00:00:00Z` +
-    `&endDateTime=${fmt(end)}T23:59:59Z`;
 
   const LARGE_VENUES = ['climate pledge', 't-mobile park', 'paramount', 'wamu theater', 'key arena', 'lumen field', 'accesso showare'];
   const SMALL_VENUES = ['neumos', 'tractor tavern', 'crocodile', 'chop suey', 'moore theatre', 'moore theater', 'showbox', 'the showbox', 'neptune', 'triple door'];
 
   try {
-    const res = await fetch(url);
+    const res = await fetch('/api/ticketmaster');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const raw  = data?._embedded?.events || [];
@@ -3201,9 +3188,9 @@ function ttDir(r) {
 
 async function fetchTravelTimes() {
   try {
-    const data = await wsdotFetch(
-      `https://www.wsdot.wa.gov/Traffic/api/TravelTimes/TravelTimesREST.svc/GetTravelTimesAsJson?AccessCode=${CONFIG.WSDOT_KEY}`
-    );
+    const res = await fetch('/api/wsdot?type=travel-times');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     if (!Array.isArray(data)) throw new Error('Non-array');
     allTravelTimes = data.filter(r => {
       if (!ttInBbox(r)) return false;
@@ -3354,9 +3341,9 @@ let scenicCams = [];
 
 async function fetchScenicCams() {
   try {
-    const data = await wsdotFetch(
-      `https://www.wsdot.wa.gov/Traffic/api/HighwayCameras/HighwayCamerasREST.svc/GetCamerasAsJson?AccessCode=${CONFIG.WSDOT_KEY}`
-    );
+    const res = await fetch('/api/wsdot?type=cameras');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     if (!Array.isArray(data)) return;
 
     const ferry = data.filter(c =>
@@ -3963,19 +3950,11 @@ async function fetchSEA() {
 }
 
 // ╔══════════════════════════════════════════════════════════╗
-//  CONFIG NOTICE
-// ╚══════════════════════════════════════════════════════════╝
-function checkConfig() {
-  if (!CONFIG.WSDOT_KEY) document.getElementById('config-notice').style.display='flex';
-}
-
-// ╔══════════════════════════════════════════════════════════╗
 //  INIT
 // ╚══════════════════════════════════════════════════════════╝
 async function init() {
   startClock();
   setDailyQuote();
-  checkConfig();
   console.log('[OBA] using key:', (CONFIG.OBA_KEY || CITY_CONFIG.obaKey || 'TEST').substring(0, 8) + '...');
 
   fetchWeather();

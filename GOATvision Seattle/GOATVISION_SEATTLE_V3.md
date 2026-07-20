@@ -66,9 +66,9 @@ FAA also uses a CORS proxy (same three services, but the FAA `fetchSEA` function
 ### API keys embedded in CONFIG (line ~1324)
 ```javascript
 const CONFIG = {
-  WSDOT_KEY:        '9086eb9c-b743-432c-a9ca-86e160d0d780',
+  WSDOT_KEY:        '<redacted — now server-side only, see api/wsdot.js>',
   OBA_KEY:          'TEST',
-  TICKETMASTER_KEY: 'EqgsmyF0kcYqZSX1w3tHMFtAVo1kTn9X',
+  TICKETMASTER_KEY: '<redacted — now server-side only, see api/ticketmaster.js>',
   SUPABASE_URL:     'https://scsdstpabzkiqnvsskts.supabase.co',
   SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjc2RzdHBhYnpraXFudnNza3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MTUxNzcsImV4cCI6MjA5NTI5MTE3N30.HMo41UCsWsCwk75GxoujLcIlwlZDhXPNnLZ1x7K8VV8',
   REFRESH_WEATHER_MS:   5 * 60 * 1000,
