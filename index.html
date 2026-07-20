@@ -249,6 +249,7 @@
   .tt-row:last-child { border-bottom:none; }
   .tt-row:hover { background:var(--bg3); }
   .tt-tag  { font-size:9px; font-weight:700; letter-spacing:0.05em; color:var(--blue); white-space:nowrap; }
+  .dir-arrow { vertical-align:-1px; }
   .tt-name { font-size:10px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tt-cur  { font-size:17px; font-weight:700; color:var(--text-bright); text-align:right; white-space:nowrap; }
   .tt-cur-unit { font-size:9px; color:var(--text-dim); font-weight:400; }
@@ -2995,11 +2996,11 @@ function lmLonToX(lon) {
 }
 
 function lmVehicleArrow(headsign, lineName) {
-  if (!headsign) return '·';
+  if (!headsign) return null;
   const h = headsign.toLowerCase();
-  if (lineName === '2 Line') return (h.includes('redmond')) ? '→' : '←';
-  if (lineName === 'T Line') return (h.includes('hilltop')) ? '↑' : '↓';
-  return (h.includes('lynnwood') || h.includes('shoreline') || h.includes('northgate') || h.includes('mountlake')) ? '↑' : '↓';
+  if (lineName === '2 Line') return (h.includes('redmond')) ? 'E' : 'W';
+  if (lineName === 'T Line') return (h.includes('hilltop')) ? 'N' : 'S';
+  return (h.includes('lynnwood') || h.includes('shoreline') || h.includes('northgate') || h.includes('mountlake')) ? 'N' : 'S';
 }
 
 async function fetchLinkVehicles() {
@@ -3021,10 +3022,10 @@ async function fetchLinkVehicles() {
     if (tripId && seen.has(tripId)) continue;
     if (tripId) seen.add(tripId);
     const h = (a.tripHeadsign || '').toLowerCase();
-    let arrow = '·';
-    if (info.name === '1 Line') arrow = (h.includes('lynnwood') || h.includes('northgate') || h.includes('shoreline') || h.includes('mountlake')) ? '↑' : '↓';
-    if (info.name === '2 Line') arrow = h.includes('redmond') ? '→' : '←';
-    byLine[info.name].push({ lat: pos.lat, lon: pos.lon, arrow, color: info.color });
+    let dir = null;
+    if (info.name === '1 Line') dir = (h.includes('lynnwood') || h.includes('northgate') || h.includes('shoreline') || h.includes('mountlake')) ? 'N' : 'S';
+    if (info.name === '2 Line') dir = h.includes('redmond') ? 'E' : 'W';
+    byLine[info.name].push({ lat: pos.lat, lon: pos.lon, dir, color: info.color });
   }
 
   console.log(`[LinkMap] 1 Line: ${byLine['1 Line'].length} (2 Line positions unavailable via OBA)`);
@@ -3078,7 +3079,7 @@ function renderLinkMap(byLine) {
       if (vx < 5 || vx > W-5 || vy < 5 || vy > H-5) return '';
       return `<g class="lm-train" transform="translate(${vx-9},${vy-5})">
         <rect width="18" height="10" rx="2" fill="${v.color}" class="lm-pulse" opacity="0.95"/>
-        <text x="9" y="8" font-family="monospace" font-size="8" fill="#fff" text-anchor="middle">${v.arrow}</text>
+        ${dirArrowSVG(v.dir, 8, '#fff', 5, 1)}
       </g>`;
     }).join('');
   }).join('');
@@ -3183,11 +3184,21 @@ function ttRoadLabel(r) {
   return TT_ROAD_MAP[rn] || null;
 }
 function ttDir(r) {
-  // E/W use solid pointer glyphs (►/◄), not the thin arrow-line glyphs (→/←) — at the
-  // 9px size .tt-tag renders at, JetBrains Mono's →/← lose their arrowhead to anti-aliasing
-  // and read as a bare hyphen, while ↑/↓ stay legible. ►/◄ stay solid and unambiguous.
-  const ARROW = { N:'↑', S:'↓', E:'►', W:'◄' };
-  return ARROW[r.StartPoint?.Direction] || '';
+  return r.StartPoint?.Direction || '';
+}
+
+// Shared direction-indicator icon — a single solid triangle rotated per direction, so all
+// four directions render with identical weight/size instead of relying on font glyphs
+// (Unicode →/← lose their arrowhead to anti-aliasing at small sizes in JetBrains Mono and
+// read as a bare hyphen, while ↑/↓ don't — this sidesteps font rendering entirely).
+// Valid as a nested element in both HTML and SVG contexts.
+const DIR_ROTATE = { N:-90, S:90, E:0, W:180 };
+function dirArrowSVG(letter, size, color, x, y) {
+  const rot = DIR_ROTATE[letter];
+  if (rot == null) return '';
+  const px = x != null ? ` x="${x}"` : '';
+  const py = y != null ? ` y="${y}"` : '';
+  return `<svg class="dir-arrow"${px}${py} width="${size||9}" height="${size||9}" viewBox="0 0 10 10" style="transform:rotate(${rot}deg);transform-origin:center"><polygon points="1.5,1.5 8.5,5 1.5,8.5" fill="${color||'currentColor'}"/></svg>`;
 }
 
 async function fetchTravelTimes() {
@@ -3267,7 +3278,7 @@ async function renderTravelTimes() {
     const name = r.Name.replace(/\s*(HOV|EL)\s*$/i,'').trim();
     const avgDisplay = baseline ? `7d avg: ${baseline.avg}m` : `avg ${avg}m`;
     html+=`<div class="tt-row" id="tt-row-${r.TravelTimeID}" title="${r.Description||r.Name}${ud?' · Updated '+minsAgo(ud):''}">
-      <span class="tt-tag">${r._road} ${r._dir}</span>
+      <span class="tt-tag">${r._road} ${dirArrowSVG(r._dir)}</span>
       <span class="tt-name">${name}</span>
       <span class="tt-cur">${cur}<span class="tt-cur-unit">m</span></span>
       <span class="tt-avg">${avgDisplay}</span>
@@ -3431,12 +3442,10 @@ function closeLightbox() {
 // ╚══════════════════════════════════════════════════════════╝
 function updateTrafficMap() {
   if (!allTravelTimes.length) return;
-  const DIR_LETTER = { '↑':'N', '↓':'S', '►':'E', '◄':'W' };
-  function segColor(road, dir) {
+  function segColor(road, letter) {
     // Check both endpoints, not just the route's precomputed single-owner _road bucket —
     // a route can carry real direction data for two different roads (one per endpoint),
     // e.g. "Seattle-Redmond" is bucketed under I-5 but its EndPoint is genuine SR-520 eastbound.
-    const letter = dir ? DIR_LETTER[dir] : null;
     const touches = x => TT_ROAD_MAP[x.StartPoint?.RoadName]===road || TT_ROAD_MAP[x.EndPoint?.RoadName]===road;
     const matches = x => (TT_ROAD_MAP[x.StartPoint?.RoadName]===road && (!letter||x.StartPoint.Direction===letter))
                        || (TT_ROAD_MAP[x.EndPoint?.RoadName]===road   && (!letter||x.EndPoint.Direction===letter));
@@ -3446,10 +3455,10 @@ function updateTrafficMap() {
     return ratio<=1.1?'#3dd62a':ratio<=1.5?'#f0a500':'#e63946';
   }
   const segs=[
-    ['seg-i5-n','I-5','↑'],['seg-i5-s','I-5','↓'],
-    ['seg-520-e','SR-520','►'],['seg-520-w','SR-520','◄'],
-    ['seg-i90-e','I-90','►'],['seg-i90-w','I-90','◄'],
-    ['seg-405-n','I-405','↑'],['seg-405-s','I-405','↓'],
+    ['seg-i5-n','I-5','N'],['seg-i5-s','I-5','S'],
+    ['seg-520-e','SR-520','E'],['seg-520-w','SR-520','W'],
+    ['seg-i90-e','I-90','E'],['seg-i90-w','I-90','W'],
+    ['seg-405-n','I-405','N'],['seg-405-s','I-405','S'],
   ];
   for (const [id,road,dir] of segs) {
     const el=document.getElementById(id);
@@ -3493,12 +3502,12 @@ function getTripDir(from, to) {
   const isNorth = r => r === 'North Seattle / Lynnwood / Everett';
   const isSouth = r => ['South Seattle / SeaTac / Renton','Tacoma / Federal Way'].includes(r);
   const isEast  = r => ['Eastside / Bellevue / Redmond','Kirkland / Bothell'].includes(r);
-  if (!isNorth(from) && isNorth(to))  return '↑';
-  if (isNorth(from)  && !isNorth(to)) return '↓';
-  if (isSouth(from)  && !isSouth(to)) return '↑';
-  if (!isSouth(from) && isSouth(to))  return '↓';
-  if (!isEast(from)  && isEast(to))   return '►';
-  if (isEast(from)   && !isEast(to))  return '◄';
+  if (!isNorth(from) && isNorth(to))  return 'N';
+  if (isNorth(from)  && !isNorth(to)) return 'S';
+  if (isSouth(from)  && !isSouth(to)) return 'N';
+  if (!isSouth(from) && isSouth(to))  return 'S';
+  if (!isEast(from)  && isEast(to))   return 'E';
+  if (isEast(from)   && !isEast(to))  return 'W';
   return null;
 }
 
@@ -3567,7 +3576,7 @@ function checkTripRoute() {
     const avgStr   = avg > 0 ? `avg ${avg}m` : '—';
     const name = r.Name.replace(/\s*(HOV|EL)\s*$/i, '').trim();
     return `<div class="trip-corridor-row">
-      <span class="tt-tag">${r._road} ${r._dir}</span>
+      <span class="tt-tag">${r._road} ${dirArrowSVG(r._dir)}</span>
       <span class="tt-name">${name}</span>
       <span class="tt-cur">${cur}<span class="tt-cur-unit">m</span></span>
       <span class="tt-avg">${deltaStr}${avgStr}</span>
@@ -3619,7 +3628,7 @@ function generateOpsBrief() {
     if (delay > 15) {
       bullets.push({ color:'red',   text:`Heavy delay on ${worst._road} — +${delay} min above average.` });
     } else if (delay > 5) {
-      const dirs = { '↑':'northbound','↓':'southbound','►':'eastbound','◄':'westbound' };
+      const dirs = { N:'northbound', S:'southbound', E:'eastbound', W:'westbound' };
       const dw   = dirs[worst._dir] ? dirs[worst._dir] + ' ' : '';
       bullets.push({ color:'amber', text:`Moderate ${dw}congestion on ${worst._road}.` });
     } else {
