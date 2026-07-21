@@ -60,7 +60,7 @@
   .dot-amber { background:var(--amber); box-shadow:0 0 4px var(--amber); }
   .dot-red   { background:var(--red);   box-shadow:0 0 4px var(--red);   }
   .dot-gray  { background:var(--text-dim); }
-  #sys-time { font-size:13px; color:var(--text-bright); font-weight:600; letter-spacing:0.05em; }
+  #sys-time { font-size:13px; color:var(--gv-green); font-weight:600; letter-spacing:0.05em; }
 
   /* ── QUOTE STRIP ── */
   #quote-strip {
@@ -516,9 +516,15 @@
   #hospitals-footer a:hover { color: var(--teal); }
 
   /* ── VET PANEL ── */
+  /* West/Seattle-side cards fill the left column top-to-bottom, Eastside cards fill the
+     right — matches the actual geography (Eastside is east of Lake Washington, right of
+     Seattle). grid-auto-flow:column + explicit rows makes the source order (Westside cards
+     first, then Eastside) resolve into left/right columns instead of interleaved rows. */
   #vet-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(4, auto);
+    grid-auto-flow: column;
     gap: 1px;
     background: var(--border);
     border-top: 1px solid var(--border);
@@ -755,7 +761,8 @@
     .link-station-dest { max-width: 120px; }
 
     /* ── HOSPITALS / VET: single column ── */
-    #hospitals-grid, #vet-grid { grid-template-columns: 1fr; }
+    #hospitals-grid { grid-template-columns: 1fr; }
+    #vet-grid { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; }
 
 
     /* ── SCENIC CAMERAS: 2-col grid ── */
@@ -1254,6 +1261,7 @@
     </div>
     <div id="vet-grid">
 
+      <!-- Westside / Seattle proper — left column -->
       <div class="vet-card">
         <div class="vet-name"><a href="https://bluepearlvet.com/hospital/seattle-wa/" target="_blank" rel="noopener noreferrer">BluePearl Pet Hospital &mdash; Seattle</a></div>
         <div class="vet-addr">4020 Stone Way N, Seattle</div>
@@ -1263,30 +1271,6 @@
           <span class="vet-tag">Critical Care</span>
           <span class="vet-tag">Surgery</span>
           <span class="vet-tag">Specialty</span>
-        </div>
-      </div>
-
-      <div class="vet-card">
-        <div class="vet-name"><a href="https://vcahospitals.com/animal-emergency-and-specialty-center-redmond" target="_blank" rel="noopener noreferrer">VCA Animal Emergency &amp; Specialty Center</a></div>
-        <div class="vet-addr">16554 NE 74th St, Redmond</div>
-        <div class="vet-phone"><a href="tel:+14258278727">(425) 827-8727</a></div>
-        <div class="vet-tags">
-          <span class="vet-tag">24/7 Emergency</span>
-          <span class="vet-tag">Oncology</span>
-          <span class="vet-tag">Neurology</span>
-          <span class="vet-tag">Cardiology</span>
-        </div>
-      </div>
-
-      <div class="vet-card">
-        <div class="vet-name"><a href="https://www.avs-kirkland.com" target="_blank" rel="noopener noreferrer">Affiliated Veterinary Specialists &mdash; Kirkland</a></div>
-        <div class="vet-addr">13020 NE 85th St, Kirkland</div>
-        <div class="vet-phone"><a href="tel:+14258239111">(425) 823-9111</a></div>
-        <div class="vet-tags">
-          <span class="vet-tag">Emergency</span>
-          <span class="vet-tag">Internal Medicine</span>
-          <span class="vet-tag">Surgery</span>
-          <span class="vet-tag">Imaging</span>
         </div>
       </div>
 
@@ -1321,6 +1305,31 @@
           <span class="vet-tag">Lost &amp; Found</span>
           <span class="vet-tag">Stray Animals</span>
           <span class="vet-tag">Adoption</span>
+        </div>
+      </div>
+
+      <!-- Eastside — right column -->
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://vcahospitals.com/animal-emergency-and-specialty-center-redmond" target="_blank" rel="noopener noreferrer">VCA Animal Emergency &amp; Specialty Center</a></div>
+        <div class="vet-addr">16554 NE 74th St, Redmond</div>
+        <div class="vet-phone"><a href="tel:+14258278727">(425) 827-8727</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">24/7 Emergency</span>
+          <span class="vet-tag">Oncology</span>
+          <span class="vet-tag">Neurology</span>
+          <span class="vet-tag">Cardiology</span>
+        </div>
+      </div>
+
+      <div class="vet-card">
+        <div class="vet-name"><a href="https://www.avs-kirkland.com" target="_blank" rel="noopener noreferrer">Affiliated Veterinary Specialists &mdash; Kirkland</a></div>
+        <div class="vet-addr">13020 NE 85th St, Kirkland</div>
+        <div class="vet-phone"><a href="tel:+14258239111">(425) 823-9111</a></div>
+        <div class="vet-tags">
+          <span class="vet-tag">Emergency</span>
+          <span class="vet-tag">Internal Medicine</span>
+          <span class="vet-tag">Surgery</span>
+          <span class="vet-tag">Imaging</span>
         </div>
       </div>
 
@@ -2106,7 +2115,7 @@ function renderIncidents(alerts) {
   const order={high:0,medium:1,low:2};
   const sorted=[...alerts].sort((a,b)=>order[parseSev(a)]-order[parseSev(b)]);
   document.getElementById('incidents-list').innerHTML = sorted.slice(0,30).map(a => {
-    const sev=parseSev(a), road=a.RoadName||'—', dir=a.DirectionText||'';
+    const sev=parseSev(a), road=a.StartRoadwayLocation?.RoadName||'—', dir=a.StartRoadwayLocation?.Direction||'';
     const desc=addTargetBlank(a.HeadlineDescription||a.ExtendedDescription||'No description');
     const loc=[a.StartRoadwayLocation?.Description,a.EndRoadwayLocation?.Description].filter(Boolean).join(' → ')||road;
     let startTime='';
@@ -3850,12 +3859,14 @@ function renderSeismic() {
     html += `<div class="volcano-grid">`;
     for (const v of _volcanoStatuses) {
       const alertCls = volcanoSevClass(v.alert_level);
-      const updated  = v.pub_date ? new Date(v.pub_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+      // Not every volcano carries a real alertDate (e.g. one with no recent notice genuinely
+      // has none) — omit the line entirely rather than show a meaningless "Updated —".
+      const updated  = v.pub_date ? new Date(v.pub_date).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : null;
       const volcIcon = (v.alert_level && v.alert_level !== 'Normal') ? '🌋' : '⛰️';
       html += `<div class="volcano-cell">
         <div class="volcano-name">${volcIcon} ${v.name}</div>
         <div class="volcano-alert ${alertCls}">${v.alert_level || '—'}</div>
-        <div class="volcano-updated">Updated ${updated}</div>
+        ${updated ? `<div class="volcano-updated">Updated ${updated}</div>` : ''}
       </div>`;
     }
     html += `</div>`;
@@ -3890,6 +3901,11 @@ async function fetchSeismic() {
 }
 
 async function fetchVolcano() {
+  // The old volcanoes.usgs.gov/vsc/api/volcanoInfo/ endpoint 404s — USGS's Volcano Hazards
+  // site was rebuilt; volcanoes.usgs.gov now redirects to www.usgs.gov/natural-hazards/
+  // volcano-hazards/. Found the real current endpoint by tracing that page's own network
+  // calls: volcanoes.usgs.gov/vsc/api/volcanoApi/regionstatus, which does carry a real
+  // per-volcano timestamp (alertDate) — confirmed against live data, not fabricated.
   const TARGETS = ['Mount Rainier', 'Mount Baker', 'Mount St. Helens'];
   const useStaticFallback = () => {
     _volcanoStatuses = TARGETS.map(name => ({ name, alert_level: 'Normal', aviation_color: 'GREEN', pub_date: null }));
@@ -3897,19 +3913,17 @@ async function fetchVolcano() {
     document.getElementById('seismic-ts').textContent = `Volcano data unavailable — showing last-known normal status`;
   };
   try {
-    const res = await fetch('https://volcanoes.usgs.gov/vsc/api/volcanoInfo/');
+    const res = await fetch('https://volcanoes.usgs.gov/vsc/api/volcanoApi/regionstatus?lat1=-90&long1=-1350&lat2=90&long2=1350');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const list = Array.isArray(data) ? data : Object.values(data);
     _volcanoStatuses = TARGETS.map(target => {
-      const match = list.find(v =>
-        (v.name || v.volcanoName || v.volcano_name || '').toLowerCase().includes(target.toLowerCase())
-      );
+      const match = list.find(v => (v.vName || '').toLowerCase().includes(target.toLowerCase()));
       return match
         ? { name: target,
-            alert_level:    match.alert_level    || match.alertLevel    || match.alert || 'Normal',
-            aviation_color: match.aviation_color || match.aviationColor || match.color || 'GREEN',
-            pub_date:       match.pub_date || match.updated || match.lastUpdate || null }
+            alert_level:    match.alertLevel || 'Normal',
+            aviation_color: match.colorCode  || 'GREEN',
+            pub_date:       match.alertDate || match.colorDate || null }
         : { name: target, alert_level: 'Normal', aviation_color: 'GREEN', pub_date: null };
     });
     renderSeismic();
@@ -3923,71 +3937,81 @@ async function fetchVolcano() {
 //  SEA-TAC AIRPORT STATUS (FAA NAS Status API — no key)
 // ╚══════════════════════════════════════════════════════════╝
 async function fetchSEA() {
-  const FAA_URL = 'https://nasstatus.faa.gov/api/airport-status-information/airport-delay-groups';
+  // FAA rebuilt nasstatus.faa.gov as a React SPA — the old XML endpoint
+  // (api/airport-status-information/airport-delay-groups) now 404s. Confirmed the real
+  // current endpoint by tracing the site's own network calls: a plain JSON array of airports
+  // that currently have an active event, each optionally carrying groundStop/groundDelay/
+  // departureDelay/arrivalDelay/airportClosure/deicing/freeForm — no XML parsing needed at all.
+  const FAA_URL = 'https://nasstatus.faa.gov/api/airport-events';
   const proxiedUrl = `/api/proxy?url=${encodeURIComponent(FAA_URL)}`;
   const el = document.getElementById('sea-content');
 
-  let text = null;
+  let data = null;
   try {
     const res = await fetch(proxiedUrl, { signal: AbortSignal.timeout(5000) });
-    if (res.ok) {
-      const t = await res.text();
-      if (t?.trim()) text = t;
-    }
+    if (res.ok) data = await res.json();
   } catch(e) {}
 
-  if (!text?.trim()) {
+  if (!Array.isArray(data)) {
     setDot('sea-dot', 'gray');
     el.innerHTML = `<div class="nws-no-alerts"><span style="color:var(--text-dim)">SEA-TAC: No delay data available</span></div>`;
     document.getElementById('sea-ts').textContent = 'Unavailable';
     return;
   }
 
-  try {
-    const xml = new DOMParser().parseFromString(text, 'application/xml');
-    const delays = [];
-    let hasGroundStop = false;
+  // The feed only lists airports with an active event right now — no entry for SEA means no
+  // active delays/closures/ground stops, a genuine all-clear, not a missing-data case.
+  const airport = data.find(a => a.airportId === CITY_CONFIG.airportCode);
+  const delays = [];
+  let severe = false;
 
-    for (const dt of xml.querySelectorAll('Delay_type')) {
-      const name    = dt.querySelector('Name')?.textContent?.trim() || '';
-      const seaNode = [...dt.querySelectorAll('ARPT')].find(a =>
-        a.textContent.trim().toUpperCase() === CITY_CONFIG.airportCode
-      );
-      if (!seaNode) continue;
-
-      const airportEl    = seaNode.closest('Airport');
-      const avgDelay     = airportEl?.querySelector('Avg')?.textContent?.trim()
-                        || dt.querySelector('AvgDelay')?.textContent?.trim() || '';
-      const reason       = airportEl?.querySelector('Reason')?.textContent?.trim()
-                        || dt.querySelector('Reason')?.textContent?.trim() || '';
-      const isGroundStop = /ground.?stop|closure/i.test(name);
-      if (isGroundStop) hasGroundStop = true;
-      delays.push({ name, reason, avgDelay, isGroundStop });
+  if (airport) {
+    if (airport.airportClosure) {
+      severe = true;
+      delays.push({ label:'CLOSED', sev:'sev-high', desc:'Airport Closure', reason: airport.airportClosure.text || airport.airportClosure.simpleText || '' });
     }
-
-    if (!delays.length) {
-      setDot('sea-dot', 'green');
-      el.innerHTML = `<div class="nws-no-alerts"><span class="sev-green">&#10003;</span>&nbsp; ${CITY_CONFIG.airportName}: No active delays or ground stops.</div>`;
-    } else {
-      setDot('sea-dot', hasGroundStop ? 'red' : 'amber');
-      el.innerHTML = delays.map(d => `
-        <div class="incident-item">
-          <div>
-            <div class="incident-sev ${d.isGroundStop ? 'sev-high' : 'sev-medium'}">${d.isGroundStop ? 'GND STOP' : 'DELAY'}</div>
-            ${d.avgDelay ? `<div style="font-size:8px;color:var(--text-dim);margin-top:3px;text-align:center">${d.avgDelay} avg</div>` : ''}
-          </div>
-          <div>
-            <div class="incident-desc">${d.name}</div>
-            <div class="incident-meta">${d.reason || 'No reason given'}</div>
-          </div>
-        </div>`).join('');
+    if (airport.groundStop) {
+      severe = true;
+      delays.push({ label:'GND STOP', sev:'sev-high', desc:'Ground Stop', reason: airport.groundStop.impactingCondition || '' });
     }
-    document.getElementById('sea-ts').textContent = `Refreshed ${ts()}`;
-  } catch(e) {
-    setDot('sea-dot', 'amber');
-    el.innerHTML = `<div class="error-msg">&#9888; FAA parse error: ${e.message}</div>`;
-    document.getElementById('sea-ts').textContent = 'ERROR';
+    if (airport.groundDelay) {
+      delays.push({ label:'GND DELAY', sev:'sev-medium', desc:'Ground Delay Program', reason: airport.groundDelay.impactingCondition || '',
+        avg: airport.groundDelay.avgDelay ? `${Math.round(airport.groundDelay.avgDelay)} min avg` : '' });
+    }
+    if (airport.departureDelay) {
+      delays.push({ label:'DEP DELAY', sev:'sev-medium', desc:'Departure Delay', reason: airport.departureDelay.reason || '',
+        avg: airport.departureDelay.averageDelay ? `${airport.departureDelay.averageDelay} min avg` : '' });
+    }
+    if (airport.arrivalDelay) {
+      delays.push({ label:'ARR DELAY', sev:'sev-medium', desc:'Arrival Delay', reason: airport.arrivalDelay.reason || '',
+        avg: airport.arrivalDelay.averageDelay ? `${airport.arrivalDelay.averageDelay} min avg` : '' });
+    }
+    if (airport.deicing) {
+      delays.push({ label:'DEICING', sev:'sev-medium', desc:'Deicing in progress', reason:'' });
+    }
+    if (airport.freeForm) {
+      delays.push({ label:'ADVISORY', sev:'sev-medium', desc:'NOTAM Advisory', reason: airport.freeForm.text || airport.freeForm.simpleText || '' });
+    }
   }
+
+  if (!delays.length) {
+    setDot('sea-dot', 'green');
+    el.innerHTML = `<div class="nws-no-alerts"><span class="sev-green">&#10003;</span>&nbsp; ${CITY_CONFIG.airportName}: No active delays or ground stops.</div>`;
+  } else {
+    setDot('sea-dot', severe ? 'red' : 'amber');
+    el.innerHTML = delays.map(d => `
+      <div class="incident-item">
+        <div>
+          <div class="incident-sev ${d.sev}">${d.label}</div>
+          ${d.avg ? `<div style="font-size:8px;color:var(--text-dim);margin-top:3px;text-align:center">${d.avg}</div>` : ''}
+        </div>
+        <div>
+          <div class="incident-desc">${d.desc}</div>
+          <div class="incident-meta">${d.reason || 'No reason given'}</div>
+        </div>
+      </div>`).join('');
+  }
+  document.getElementById('sea-ts').textContent = `Refreshed ${ts()}`;
 }
 
 // ╔══════════════════════════════════════════════════════════╗
