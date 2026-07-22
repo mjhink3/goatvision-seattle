@@ -810,6 +810,7 @@
     <span><span class="dot dot-gray"  id="seismic-dot"></span> &#127755; Seismic</span>
     <span><span class="dot dot-gray"  id="sea-dot"></span> &#9992; SEA-TAC</span>
     <span id="sys-time-wrap" style="display:flex;flex-direction:column;align-items:center;gap:1px">
+      <span id="sys-date" class="cond-sub" style="font-size:9px">--</span>
       <span id="sys-time">--:--:--</span>
       <span class="cond-sub" style="font-size:8px">Seattle time</span>
     </span>
@@ -1721,6 +1722,9 @@ async function wsdotFetch(url) {
 function ts(d = new Date()) {
   return d.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
+function dateStr(d = new Date()) {
+  return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+}
 function minsAgo(date) {
   const s = Math.floor((Date.now()-date)/1000);
   return s < 60 ? `${s}s ago` : `${Math.floor(s/60)}m ${s%60}s ago`;
@@ -1746,7 +1750,11 @@ function addTargetBlank(html) {
 // ╚══════════════════════════════════════════════════════════╝
 function startClock() {
   const el = document.getElementById('sys-time');
-  const tick = () => { el.textContent = ts(); };
+  const dateEl = document.getElementById('sys-date');
+  const tick = () => {
+    el.textContent = ts();
+    if (dateEl) dateEl.textContent = dateStr();
+  };
   tick(); setInterval(tick, 1000);
 }
 
