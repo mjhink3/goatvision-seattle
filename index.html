@@ -1950,9 +1950,9 @@ function renderConditions(data) {
   const sunsetStr  = fmtTime(sunset);
 
   let rainierVal, rainierSub, rainierSev;
-  if (wmoSeverity(code)>=0.5 || clouds>75) { rainierVal='Hidden';  rainierSub='Cloud ceiling'; rainierSev='sev-red';  }
-  else if (clouds>40)                       { rainierVal='Maybe';   rainierSub=`${clouds}% clouds`; rainierSev='sev-amber'; }
-  else                                      { rainierVal='Visible'; rainierSub=`${clouds}% clouds`; rainierSev='sev-green'; }
+  if (wmoSeverity(code)>=0.5 || clouds>75) { rainierVal='Hiding';  rainierSub='Cloud ceiling';   rainierSev='sev-red';  }
+  else if (clouds>40)                       { rainierVal='Hazy';    rainierSub='Partial ceiling'; rainierSev='sev-amber'; }
+  else                                      { rainierVal='Visible'; rainierSub='No ceiling';      rainierSev='sev-green'; }
 
   const ov = precip*0.4/100 + windSev(wind)*0.3 + wmoSeverity(code)*0.3;
   const cells = [
