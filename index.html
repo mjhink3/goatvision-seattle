@@ -73,6 +73,19 @@
   #quote-strip .q-mark { color:var(--gv-purple); font-size:16px; font-style:normal; flex-shrink:0; }
   #quote-strip .q-attr { color:var(--gv-green); font-style:normal; font-weight:600; }
 
+  /* ── ON THIS DAY STRIP ── */
+  #otd-strip {
+    background: linear-gradient(90deg,#0d0b22,#130e2e,#0d0b22);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 18px;
+    display: none; align-items: center; gap: 8px;
+    font-size: 10px; color: var(--text-dim);
+  }
+  #otd-strip .otd-mark { color:var(--gv-green); font-size:12px; flex-shrink:0; }
+  #otd-strip .otd-year { color:var(--gv-purple); font-weight:600; }
+  #otd-strip a { color:inherit; text-decoration:none; border-bottom:1px dotted var(--text-dim); }
+  #otd-strip a:hover { border-bottom-style:solid; }
+
   /* ── CROSS-APP NAV STRIP ── */
   #citynav-strip {
     background: linear-gradient(90deg,#0d0b22,#130e2e,#0d0b22);
@@ -829,6 +842,12 @@
 <div id="quote-strip">
   <span class="q-mark">&#8220;</span>
   <span id="quote-text" style="flex:1">Loading&hellip;</span>
+</div>
+
+<!-- ═════════════════════════════════════════ ON THIS DAY ═══ -->
+<div id="otd-strip">
+  <span class="otd-mark">&#128197;</span>
+  <span id="otd-text" style="flex:1"></span>
 </div>
 
 <!-- ═══════════════════════════════════════════ MAIN ═══ -->
@@ -1768,6 +1787,39 @@ function setDailyQuote() {
   const q     = CITY_CONFIG.quotes[doy % CITY_CONFIG.quotes.length];
   document.getElementById('quote-text').innerHTML =
     `&#8220;${q.text}&#8221; &nbsp;<span class="q-attr">— ${q.attr}</span>`;
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+//  ON THIS DAY — curated, static dataset; matched by month/day only, year ignored.
+//  Panel stays hidden entirely on any date with no entry — no fetch, no placeholder text.
+// ╚══════════════════════════════════════════════════════════╝
+const ON_THIS_DAY = [
+  { date:"02/02", year:2014, description:"The Seattle Seahawks defeated the Denver Broncos in Super Bowl XLVIII and brought the Lombardi Trophy to Seattle.", source:"https://www.nfl.com/photos/super-bowl-xlviii-seattle-seahawks-victory-parade-0ap2000000323812" },
+  { date:"02/08", year:2026, description:"The Seattle Seahawks defeated the New England Patriots 29–13 in Super Bowl LX at Levi's Stadium in Santa Clara, California — the franchise's second Super Bowl title, and a rematch of Super Bowl XLIX (2015), which the Patriots won. Kenneth Walker III was named Super Bowl MVP.", source:"https://www.nfl.com/news/seahawks-rb-kenneth-walker-iii-named-super-bowl-lx-mvp" },
+  { date:"03/26", year:1917, description:"The Seattle Metropolitans defeated the Montreal Canadiens 9–1 to win the best-of-five series 3 games to 1, becoming the first American team to win the Stanley Cup.", source:"https://www.historylink.org/file/20915" },
+  { date:"04/21", year:1962, description:"The Century 21 Exposition, also known as the Seattle World’s Fair, opened to the public. The exposition ran through October 21 and drew nearly 10 million visitors.", source:"https://www.seattle.gov/city-archives/exhibits-and-education/digital-document-libraries/century-21-worlds-fair" },
+  { date:"06/01", year:1979, description:"The Seattle SuperSonics defeated Washington 97–93 in Game 5, securing the franchise’s only NBA championship.", source:"https://www.nba.com/news/history-this-date-in-nba-june" },
+  { date:"06/02", year:2014, description:"The Seattle City Council unanimously approved a $15-per-hour minimum-wage ordinance, identifying Seattle as the first major U.S. city to adopt that wage level.", source:"https://council.seattle.gov/2014/06/02/city-council-approves-15hour-minimum-wage-in-seattle/" },
+  { date:"06/06", year:1889, description:"The Great Seattle Fire began and swept across roughly 100 acres of the city’s business district and waterfront. The Seattle Municipal Archives identifies it as a turning point that changed the city’s physical and political landscape.", source:"https://www.seattle.gov/city-archives/exhibits-and-education/digital-document-libraries/the-great-seattle-fire-of-1889" },
+  { date:"08/17", year:1907, description:"Pike Place Market officially opened as a public farmers’ market established by City Council ordinance.", source:"https://www.seattle.gov/city-archives/exhibits-and-education/online-exhibits/pike-place-market-centennial" },
+  { date:"09/12", year:2018, description:"The Seattle Storm swept the Washington Mystics 98–82 in Game 3 to complete a 3-0 series sweep, winning the franchise's third WNBA championship. Breanna Stewart was named Finals MVP.", source:"https://www.seattletimes.com/sports/storm/the-champs-are-back-seattle-storm-wins-the-2018-wnba-championship/" },
+  { date:"09/16", year:2010, description:"The Seattle Storm completed a 3-0 sweep of the Atlanta Dream, winning Game 3 87–84 to capture the franchise's second WNBA championship.", source:"https://historylink.org/file/9602" },
+  { date:"10/06", year:2020, description:"The Seattle Storm completed a 3-0 sweep of the Las Vegas Aces with a 92–59 Game 3 win at the WNBA's single-site bubble in Bradenton, Florida, capturing the franchise's fourth WNBA championship. Breanna Stewart was named Finals MVP.", source:"https://www.historylink.org/File/21117" },
+  { date:"10/12", year:2004, description:"The Seattle Storm defeated the Connecticut Sun 74–60 in Game 3 at KeyArena, winning the WNBA Finals series 2–1.", source:"https://www.wnba.com/news/the-best-photos-from-seattles-2004-wnba-championship" },
+  { date:"11/10", year:2019, description:"The Seattle Sounders defeated Toronto FC 3–1 before a record home crowd at CenturyLink Field to win the franchise's second MLS Cup.", source:"https://www.mlssoccer.com/news/2019-mls-cup-seattle-sounders-fc-3-toronto-fc-1" },
+  { date:"11/13", year:1851, description:"The Denny Party arrived at Alki Beach aboard the schooner Exact. The group later relocated to Elliott Bay, where the settlement developed into Seattle.", source:"https://archiveswest.orbiscascade.org/ark:80444/xv93118" },
+  { date:"11/29", year:1999, description:"Demonstrations connected with Seattle’s hosting of the World Trade Organization Ministerial were documented on this date. The Seattle Municipal Archives characterizes the episode as one of the city’s largest political protests.", source:"https://www.seattle.gov/city-archives/exhibits-and-education/digital-document-libraries/world-trade-organization-protests-in-seattle" },
+  { date:"12/10", year:2016, description:"The Seattle Sounders won their first MLS championship, defeating Toronto FC 5–4 on penalty kicks after a scoreless final.", source:"https://www.mlssoccer.com/news/toronto-fc-0-4-seattle-sounders-0-5-2016-mls-cup-final-recap" },
+];
+function setOnThisDay() {
+  const now  = new Date();
+  const mmdd = String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0');
+  const el   = document.getElementById('otd-strip');
+  const hit  = ON_THIS_DAY.find(e => e.date === mmdd);
+  if (!hit) { el.style.display = 'none'; return; }
+  document.getElementById('otd-text').innerHTML =
+    `${hit.description} <span class="otd-year">(${hit.year})</span> — <a href="${hit.source}" target="_blank" rel="noopener noreferrer">source</a>`;
+  el.style.display = 'flex';
 }
 
 // ╔══════════════════════════════════════════════════════════╗
@@ -4063,6 +4115,7 @@ async function fetchSEA() {
 async function init() {
   startClock();
   setDailyQuote();
+  setOnThisDay();
   console.log('[OBA] using key:', (CONFIG.OBA_KEY || CITY_CONFIG.obaKey || 'TEST').substring(0, 8) + '...');
 
   fetchWeather();
