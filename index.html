@@ -189,14 +189,15 @@
   .ferry-track-wrap { display:flex; align-items:center; gap:10px; }
   .ferry-term { font-size:8px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); white-space:nowrap; min-width:52px; opacity:0.65; }
   .ferry-term.right { text-align:right; color:var(--gv-purple); opacity:1; }
-  .ferry-track { flex:1; position:relative; height:30px; }
+  .ferry-track-col { flex:1; display:flex; flex-direction:column; gap:4px; }
+  .ferry-track { position:relative; height:30px; }
   .ferry-track-bg   { position:absolute; left:5px; right:5px; top:50%; transform:translateY(-50%); height:2px; background:var(--border); border-radius:2px; }
   .ferry-track-fill { position:absolute; left:5px; top:50%; transform:translateY(-50%); height:2px; background:linear-gradient(90deg,var(--blue-dim),var(--blue)); border-radius:2px; transition:width 1.4s ease; }
   .ferry-dot { position:absolute; width:8px; height:8px; border-radius:50%; background:var(--bg2); border:2px solid var(--text-dim); top:50%; transform:translateY(-50%); }
   .ferry-dot.start { left:0; }
   .ferry-dot.end   { right:0; }
   .ferry-boat { position:absolute; top:50%; transform:translate(-50%,-50%); font-size:20px; line-height:1; transition:left 1.4s ease; filter:drop-shadow(0 0 4px var(--gv-purple)); }
-  .ferry-meta { font-size:9px; color:var(--text-dim); margin-top:4px; padding-left:2px; }
+  .ferry-meta { font-size:9px; color:var(--text-dim); text-align:center; }
   .ferry-meta .vname  { color:var(--text-bright); font-weight:600; }
   .ferry-meta .vonway { color:var(--amber); font-weight:700; }
   .ferry-meta .vdock  { color:var(--green); font-weight:700; }
@@ -768,7 +769,6 @@
     .ferry-route:last-child { border-bottom: none; }
     .ferry-boat { font-size: 14px; }
     .ferry-term { font-size: 7px; }
-    .ferry-track { flex: 1; }
 
     /* ── GAME DAY & EVENTS ── */
     #events-list { max-height: none; }
@@ -2463,20 +2463,22 @@ function renderFerry(vessels) {
               <div class="ferry-term">${shortTerm(dep)}</div>
               ${ferryCamCell(dep)}
             </div>
-            <div class="ferry-track">
-              <div class="ferry-track-bg"></div>
-              <div class="ferry-track-fill" style="width:${fill}"></div>
-              <div class="ferry-dot start"></div>
-              <div class="ferry-dot end"></div>
-              <div class="ferry-boat" style="left:${pct.toFixed(1)}%">⛴</div>
+            <div class="ferry-track-col">
+              <div class="ferry-track">
+                <div class="ferry-track-bg"></div>
+                <div class="ferry-track-fill" style="width:${fill}"></div>
+                <div class="ferry-dot start"></div>
+                <div class="ferry-dot end"></div>
+                <div class="ferry-boat" style="left:${pct.toFixed(1)}%">⛴</div>
+              </div>
+              <div class="ferry-meta">
+                <span class="vname">${name}</span> · ${statusSpan}${timeLine}
+              </div>
             </div>
             <div class="ferry-term-col">
               <div class="ferry-term right">${shortTerm(arr)}</div>
               ${ferryCamCell(arr)}
             </div>
-          </div>
-          <div class="ferry-meta">
-            <span class="vname">${name}</span> · ${statusSpan}${timeLine}
           </div>
         </div>`;
       }).join('');
