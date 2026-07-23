@@ -200,6 +200,12 @@
   .ferry-meta { font-size:9px; color:var(--text-dim); text-align:center; }
   .ferry-next { font-size:8px; color:var(--text-dim); text-align:center; margin-top:2px; }
   .ferry-cap-static { color:var(--text-dim); font-style:italic; } /* deliberately muted/neutral, never a sev-* color — this is a published spec, not a live status */
+  /* "Full" treatment — visually distinct from ordinary sev-red (near-capacity but still
+     bookable): the time itself is struck through, plus a solid red FULL tag, rather than
+     just a red-colored number like the normal low-capacity state. */
+  .ferry-full-time { text-decoration:line-through; color:var(--text-dim); }
+  .ferry-full-badge { color:#fff; background:var(--red); font-weight:700; font-size:7px; letter-spacing:0.05em; padding:1px 4px; border-radius:2px; margin-left:3px; }
+  .ferry-cap-full { color:var(--red); font-weight:700; }
   .ferry-meta .vname  { color:var(--text-bright); font-weight:600; }
   .ferry-meta .vonway { color:var(--amber); font-weight:700; }
   .ferry-meta .vdock  { color:var(--green); font-weight:700; }
@@ -2417,7 +2423,9 @@ function nextSailings(dep, arr, count = 3) {
 
 // Compact "9:00 · 9:30 · 10:00 AM" formatting — AM/PM suffix dropped except where the
 // period actually changes between consecutive entries, so a noon crossing stays unambiguous.
-function formatSailingTimes(epochs) {
+// Returns the array of individual labels (not yet joined) so callers can wrap specific
+// entries (e.g. a sailing that's actually full) without re-deriving the AM/PM logic.
+function formatSailingTimeParts(epochs) {
   const parts = epochs.map(t => new Date(t).toLocaleTimeString('en-US', {
     timeZone: CITY_CONFIG.timezone, hour: 'numeric', minute: '2-digit', hour12: true,
   }));
@@ -2425,7 +2433,7 @@ function formatSailingTimes(epochs) {
     const isLast = i === parts.length - 1;
     if (!isLast && p.slice(-2) === parts[i + 1].slice(-2)) return p.slice(0, -3);
     return p;
-  }).join(' · ');
+  });
 }
 
 // WSF Terminals — real-time vehicle capacity per sailing, confirmed live (no access code
@@ -2466,16 +2474,17 @@ async function fetchFerrySailingSpace() {
   } catch (e) { /* leave ferrySailingSpace as-is; capacity just stays omitted */ }
 }
 
-// Capacity for the SOONEST upcoming sailing on this exact dep->arr pair only — not all 3
-// times shown in the Next: line, to stay a single glanceable figure, not a mini-timetable.
-function nextSailingCapacity(dep, arr) {
+// Capacity for one exact sailing on this dep->arr pair, matched by exact departure
+// epoch against ferrySchedule's own time — confirmed live that the schedule feed and
+// this capacity feed report identical epochs for the same real sailing (25 of 26 upcoming
+// Mukilteo/Clinton sailings matched exactly; the one miss was simply the capacity feed's
+// shorter forward-looking window missing that day's very last, near-midnight sailing —
+// irrelevant here since we only ever look up the 3 soonest). Returns null if this exact
+// sailing has no live coverage, which is the normal/expected case for uncovered routes.
+function sailingCapacityAt(dep, arr, epoch) {
   const dk = camKeyword(dep), ak = camKeyword(arr);
   if (!dk || !ak) return null;
-  const now = Date.now();
-  const upcoming = ferrySailingSpace
-    .filter(s => camKeyword(s.dep) === dk && camKeyword(s.arr) === ak && s.departureEpoch > now)
-    .sort((a, b) => a.departureEpoch - b.departureEpoch);
-  return upcoming[0] || null;
+  return ferrySailingSpace.find(s => camKeyword(s.dep) === dk && camKeyword(s.arr) === ak && s.departureEpoch === epoch) || null;
 }
 
 // Static fallback for routes terminalsailingspace never covers at all (confirmed live:
@@ -2501,12 +2510,14 @@ async function fetchVesselSpecs() {
   } catch (e) { /* leave vesselCapacity as-is; static fallback just stays omitted */ }
 }
 
-// Live remaining count when terminalsailingspace covers this leg; otherwise the vessel's
-// static published capacity if known; otherwise nothing. The two are worded so they can
-// never be confused: "X/Y spots open" (live) vs "Max X" (static spec, not a live count).
-function capacityHtml(dep, arr, vesselName) {
-  const cap = nextSailingCapacity(dep, arr);
+// Live remaining count for the soonest sailing (cap, already looked up by the caller);
+// otherwise the vessel's static published capacity if known; otherwise nothing. Worded so
+// none of the three states can be confused: "X/Y spots open" (live, still has room),
+// "FULL" (live, confirmed 0 remaining — bold red, never a fraction), or "Max X" (static
+// spec, not a live count at all).
+function capacityHtml(cap, vesselName) {
   if (cap) {
+    if (cap.count === 0) return ` <span class="ferry-cap-full">&#128663; FULL</span>`;
     const cls = WSF_SPACE_COLOR_CLASS[cap.hexColor] || '';
     return ` <span class="${cls}">&#128663; ${cap.count}/${cap.max} spots open</span>`;
   }
@@ -2520,11 +2531,24 @@ function capacityHtml(dep, arr, vesselName) {
 function nextSailingsLine(dep, arr, vesselName) {
   const times = nextSailings(dep, arr, 3);
   if (!times.length) return '';
+  const labels = formatSailingTimeParts(times);
+  const caps = times.map(t => sailingCapacityAt(dep, arr, t));
+  // Strictly scoped to a real, already-confirmed-live signal: a sailing whose live count
+  // has actually reached 0 while still upcoming. Deliberately NOT built from a sailing
+  // aging out of the response — directly observed live that entries persist past their
+  // own departure with a frozen, non-zero count rather than reliably vanishing at
+  // departure, so "disappeared" was confirmed to carry no fullness meaning at all.
+  const timesHtml = times.map((t, i) => {
+    if (caps[i] && caps[i].count === 0) {
+      return `<span class="ferry-full-time">${labels[i]}</span><span class="ferry-full-badge">FULL</span>`;
+    }
+    return labels[i];
+  }).join(' · ');
   // "Next from X" — dep is already this specific vessel's real departure terminal for
   // its current direction (same derivation already used for the schedule/capacity
   // lookups above), not a fixed side — it flips correctly when a vessel is running the
   // opposite leg of the same route.
-  return `<div class="ferry-next">Next from ${dep}: ${formatSailingTimes(times)}${capacityHtml(dep, arr, vesselName)}</div>`;
+  return `<div class="ferry-next">Next from ${dep}: ${timesHtml}${capacityHtml(caps[0], vesselName)}</div>`;
 }
 
 async function fetchFerry() {
