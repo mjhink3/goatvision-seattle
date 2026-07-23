@@ -2422,10 +2422,64 @@ function formatSailingTimes(epochs) {
   }).join(' · ');
 }
 
+// WSF Terminals — real-time vehicle capacity per sailing, confirmed live (no access code
+// needed). Coverage is genuinely uneven across our 4 routes: Mukilteo/Clinton and
+// Seattle/Bainbridge report both directions; Point Defiance/Tahlequah reports only the
+// Point Defiance-departing direction; Fauntleroy/Vashon/Southworth reports nothing at
+// all. Derived the same way as schedule/cameras — look up by real dep/arr, omit if not
+// found, never estimate a value for routes with no data.
+let ferrySailingSpace = []; // flat list: [{dep, arr, departureEpoch, count, max, hexColor}]
+
+// WSF's own reported color, confirmed NOT a fixed percentage cutoff (found a yellow
+// example at 19% remaining and a red example at 10% — their logic factors in more than
+// raw percentage), so this maps their color directly rather than recomputing one.
+const WSF_SPACE_COLOR_CLASS = { '#00FF00': 'sev-green', '#FFFF00': 'sev-amber', '#FF0000': 'sev-red' };
+
+async function fetchFerrySailingSpace() {
+  try {
+    const res = await fetch('/api/wsdot?type=sailingspace');
+    if (!res.ok) return;
+    const data = await res.json();
+    const flat = [];
+    for (const term of data) {
+      for (const d of term.DepartingSpaces || []) {
+        const epoch = Number((d.Departure || '').match(/\d+/)?.[0]);
+        if (isNaN(epoch)) continue;
+        for (const s of d.SpaceForArrivalTerminals || []) {
+          if (!s.DisplayDriveUpSpace || s.DriveUpSpaceCount == null) continue;
+          flat.push({
+            dep: term.TerminalName, arr: s.TerminalName, departureEpoch: epoch,
+            count: s.DriveUpSpaceCount, max: s.MaxSpaceCount, hexColor: s.DriveUpSpaceHexColor,
+          });
+        }
+      }
+    }
+    ferrySailingSpace = flat;
+    // Same fetch-order race as cameras/schedule — re-render once this data actually arrives.
+    if (ferryVessels.length) renderFerry(ferryVessels);
+  } catch (e) { /* leave ferrySailingSpace as-is; capacity just stays omitted */ }
+}
+
+// Capacity for the SOONEST upcoming sailing on this exact dep->arr pair only — not all 3
+// times shown in the Next: line, to stay a single glanceable figure, not a mini-timetable.
+function nextSailingCapacity(dep, arr) {
+  const dk = camKeyword(dep), ak = camKeyword(arr);
+  if (!dk || !ak) return null;
+  const now = Date.now();
+  const upcoming = ferrySailingSpace
+    .filter(s => camKeyword(s.dep) === dk && camKeyword(s.arr) === ak && s.departureEpoch > now)
+    .sort((a, b) => a.departureEpoch - b.departureEpoch);
+  return upcoming[0] || null;
+}
+
 function nextSailingsLine(dep, arr) {
   const times = nextSailings(dep, arr, 3);
   if (!times.length) return '';
-  return `<div class="ferry-next">Next: ${formatSailingTimes(times)}</div>`;
+  const cap = nextSailingCapacity(dep, arr);
+  const capHtml = cap
+    ? ` <span class="${WSF_SPACE_COLOR_CLASS[cap.hexColor] || ''}">&#128663; ${cap.count}/${cap.max}</span>`
+    : '';
+  return `<div class="ferry-next">Next: ${formatSailingTimes(times)}${capHtml}</div>`;
 }
 
 async function fetchFerry() {
@@ -4342,6 +4396,7 @@ async function init() {
   fetchIncidents();
   fetchFerry();
   fetchFerrySchedules();
+  fetchFerrySailingSpace();
   fetchTide();
   await fetchTransit();
   renderMetroSchedule();
@@ -4363,6 +4418,7 @@ async function init() {
   setInterval(fetchIncidents,   CONFIG.REFRESH_INCIDENTS_MS);
   setInterval(fetchFerry,       CONFIG.REFRESH_FERRY_MS);
   setInterval(fetchFerrySchedules, 15 * 60 * 1000); // schedules rarely change within a day
+  setInterval(fetchFerrySailingSpace, 5 * 60 * 1000); // cache-flush observed ~3-5 min old, matches cadence
   setInterval(fetchSFD,         5 * 60 * 1000);               // SFD feed updates every 5 min
   setInterval(fetchEvents,         60 * 60 * 1000);            // schedule rarely changes
   setInterval(fetchTicketmaster,   60 * 60 * 1000);            // Ticketmaster — same cadence
