@@ -2548,7 +2548,15 @@ function nextSailingsLine(dep, arr, vesselName) {
   // its current direction (same derivation already used for the schedule/capacity
   // lookups above), not a fixed side — it flips correctly when a vessel is running the
   // opposite leg of the same route.
-  return `<div class="ferry-next">Next from ${dep}: ${timesHtml}${capacityHtml(caps[0], vesselName)}</div>`;
+  //
+  // Two stacked lines (capacity, then schedule) instead of one — same .ferry-next class,
+  // same data/wording, just reordered so capacity sits directly under the vessel
+  // name/status line and the schedule line no longer has to also carry the trailing
+  // capacity fragment.
+  const capFragment = capacityHtml(caps[0], vesselName);
+  const capLine = capFragment ? `<div class="ferry-next">${capFragment.replace(/^ /, '')}</div>` : '';
+  const scheduleLine = `<div class="ferry-next">Next from ${dep}: ${timesHtml}</div>`;
+  return `${capLine}${scheduleLine}`;
 }
 
 async function fetchFerry() {
