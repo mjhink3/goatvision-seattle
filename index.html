@@ -201,6 +201,12 @@
   .ferry-meta .vonway { color:var(--amber); font-weight:700; }
   .ferry-meta .vdock  { color:var(--green); font-weight:700; }
   .ferry-no-data { font-size:9px; color:var(--text-dim); font-style:italic; padding:4px 0; }
+  /* ── FERRY TERMINAL THUMBNAILS — small companion to Live Camera Feeds' full stills ── */
+  .ferry-cams { display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); flex-wrap:wrap; }
+  .ferry-cam-cell { width:56px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .ferry-cam-cell img { width:56px; height:38px; object-fit:cover; border-radius:2px; border:1px solid var(--border); display:block; }
+  .ferry-cam-ph { width:56px; height:38px; display:flex; align-items:center; justify-content:center; background:var(--bg3); border-radius:2px; border:1px solid var(--border); font-size:14px; color:var(--text-dim); }
+  .ferry-cam-label { font-size:7px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:56px; }
 
   /* ── EVENTS ── */
   #events-list { max-height:360px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
@@ -2308,6 +2314,47 @@ const FERRY_ROUTE_KEYWORDS = [
   { name:'Point Defiance / Tahlequah',              keywords:['point defiance','tahlequah'] },
 ];
 
+// Terminals are fixed (only vessels move), so this is a one-time pairing of each route's
+// real terminal names to a camera-matching keyword — resolved against ferryCamPool at
+// render time, not hardcoded to a specific CameraID, so it survives WSDOT reordering its
+// camera list. Fauntleroy/Vashon/Southworth genuinely has 3 terminals, not 2 — it's a
+// triangle route, not a simple start/end corridor like the other three.
+const FERRY_ROUTE_TERMINAL_CAMS = {
+  'Mukilteo / Clinton':                     [{ label:'Mukilteo',       kw:'mukilteo' },       { label:'Clinton',      kw:'clinton' }],
+  'Seattle / Bainbridge Island':             [{ label:'Seattle',        kw:'seattle' },        { label:'Bainbridge',   kw:'bainbridge' }],
+  'Fauntleroy / Vashon Island / Southworth': [{ label:'Fauntleroy',     kw:'fauntleroy' },     { label:'Vashon',       kw:'vashon' }, { label:'Southworth', kw:'southworth' }],
+  'Point Defiance / Tahlequah':              [{ label:'Point Defiance', kw:'point defiance' }, { label:'Tahlequah',    kw:'tahlequah' }],
+};
+
+// Prefer the camera actually AT the terminal (Holding/Terminal/Dock) over approach-road
+// cameras that also happen to mention the terminal name — confirmed against live data that
+// naive first-match picks an approach-road camera for Mukilteo and Clinton specifically.
+function ferryTerminalCam(kw) {
+  const matches = ferryCamPool.filter(c => (c.Title||'').toLowerCase().includes(kw));
+  if (!matches.length) return null;
+  for (const pref of ['holding','terminal','dock']) {
+    const hit = matches.find(c => (c.Title||'').toLowerCase().includes(pref));
+    if (hit) return hit;
+  }
+  return matches[0];
+}
+
+function renderFerryTerminalCams(routeName) {
+  const terms = FERRY_ROUTE_TERMINAL_CAMS[routeName];
+  if (!terms || !ferryCamPool.length) return '';
+  const cells = terms.map(t => {
+    const cam = ferryTerminalCam(t.kw);
+    if (!cam) return `<div class="ferry-cam-cell"><div class="ferry-cam-ph">&#128247;</div><div class="ferry-cam-label">${t.label}</div></div>`;
+    return `<div class="ferry-cam-cell">
+      <img src="${cam.ImageURL}?_t=${Date.now()}" alt="${t.label} terminal camera" loading="lazy"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="ferry-cam-ph" style="display:none">&#128247;</div>
+      <div class="ferry-cam-label">${t.label}</div>
+    </div>`;
+  }).join('');
+  return `<div class="ferry-cams">${cells}</div>`;
+}
+
 async function fetchFerry() {
   try {
     const res = await fetch('/api/wsdot?type=ferries');
@@ -2436,6 +2483,7 @@ function renderFerry(vessels) {
     html += `<div class="ferry-route">
       <div class="ferry-route-name">${route.name}</div>
       ${inner}
+      ${renderFerryTerminalCams(route.name)}
     </div>`;
   }
   html += '</div>';
@@ -3554,6 +3602,11 @@ document.querySelectorAll('.tt-filter-btn').forEach(btn => {
 //  SCENIC CAMERAS — multi-box grid + click-to-expand
 // ╚══════════════════════════════════════════════════════════╝
 let scenicCams = [];
+// Full ferry-camera candidate list (pre-dedup) — same fetch as scenicCams, kept around
+// separately so the Ferry Tracker's terminal thumbnails can pick the best camera per
+// terminal (Holding/Terminal/Dock preferred) independent of whichever single camera the
+// Live Camera Feeds grid's own "one per terminal for variety" pass happened to pick first.
+let ferryCamPool = [];
 
 async function fetchScenicCams() {
   try {
@@ -3568,6 +3621,7 @@ async function fetchScenicCams() {
       (c.CameraLocation?.Latitude ?? 0) >= CITY_CONFIG.cameraLatMin &&
       (c.CameraLocation?.Latitude ?? 0) <= CITY_CONFIG.cameraLatMax
     );
+    ferryCamPool = ferry;
 
     // One per terminal for variety, then fill with any remaining
     const seen = new Set();
