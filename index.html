@@ -198,6 +198,7 @@
   .ferry-dot.end   { right:0; }
   .ferry-boat { position:absolute; top:50%; transform:translate(-50%,-50%); font-size:20px; line-height:1; transition:left 1.4s ease; filter:drop-shadow(0 0 4px var(--gv-purple)); }
   .ferry-meta { font-size:9px; color:var(--text-dim); text-align:center; }
+  .ferry-next { font-size:8px; color:var(--text-dim); text-align:center; margin-top:2px; }
   .ferry-meta .vname  { color:var(--text-bright); font-weight:600; }
   .ferry-meta .vonway { color:var(--amber); font-weight:700; }
   .ferry-meta .vdock  { color:var(--green); font-weight:700; }
@@ -2351,6 +2352,82 @@ function ferryCamCell(terminalName) {
   </div>`;
 }
 
+// WSF Schedule — confirmed live (no access code required) as a genuinely separate
+// product from the vessel-locations feed above. The Fauntleroy/Vashon/Southworth
+// triangle is really 3 separate WSF route IDs, not one — each leg fetched independently.
+const FERRY_SCHEDULE_ROUTE_IDS = {
+  'Mukilteo / Clinton':                     [7],
+  'Seattle / Bainbridge Island':             [5],
+  'Fauntleroy / Vashon Island / Southworth': [14, 13, 15],
+  'Point Defiance / Tahlequah':              [1],
+};
+
+let ferrySchedule = []; // merged TerminalCombos across all tracked route IDs: [{dep, arr, times:[epochMs,...]}]
+
+// Seattle's own current calendar date, not the viewer's — same lesson as the sunrise/
+// sunset and 7-day-forecast fixes: an explicit timeZone option on a real Date.now()
+// instant is safe (unlike parsing a naive date-time string), since there's no parse step
+// to double-convert here, just a direct "what date is it right now, in this zone" ask.
+function seattleTodayISO() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: CITY_CONFIG.timezone });
+}
+
+async function fetchFerrySchedules() {
+  const dateStr = seattleTodayISO();
+  const routeIds = [...new Set(Object.values(FERRY_SCHEDULE_ROUTE_IDS).flat())];
+  const combos = [];
+  for (const routeId of routeIds) {
+    try {
+      const res = await fetch(`/api/wsdot?type=schedule&date=${dateStr}&routeId=${routeId}`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const combo of data.TerminalCombos || []) {
+        combos.push({
+          dep: combo.DepartingTerminalName,
+          arr: combo.ArrivingTerminalName,
+          times: (combo.Times || [])
+            .map(t => Number((t.DepartingTime || '').match(/\d+/)?.[0]))
+            .filter(t => !isNaN(t)),
+        });
+      }
+    } catch (e) { /* one route's schedule failing shouldn't block the others */ }
+  }
+  ferrySchedule = combos;
+  // Same race fetchScenicCams() had to close: fetchFerry() may already have rendered
+  // before this completes, so re-render once schedule data actually arrives.
+  if (ferryVessels.length) renderFerry(ferryVessels);
+}
+
+// Next 2-3 real upcoming departures for this exact dep->arr pair, filtered to genuinely
+// future sailings only (the API returns the whole day, including already-departed ones).
+function nextSailings(dep, arr, count = 3) {
+  const dk = camKeyword(dep), ak = camKeyword(arr);
+  if (!dk || !ak) return [];
+  const combo = ferrySchedule.find(c => camKeyword(c.dep) === dk && camKeyword(c.arr) === ak);
+  if (!combo) return [];
+  const now = Date.now();
+  return combo.times.filter(t => t > now).sort((a, b) => a - b).slice(0, count);
+}
+
+// Compact "9:00 · 9:30 · 10:00 AM" formatting — AM/PM suffix dropped except where the
+// period actually changes between consecutive entries, so a noon crossing stays unambiguous.
+function formatSailingTimes(epochs) {
+  const parts = epochs.map(t => new Date(t).toLocaleTimeString('en-US', {
+    timeZone: CITY_CONFIG.timezone, hour: 'numeric', minute: '2-digit', hour12: true,
+  }));
+  return parts.map((p, i) => {
+    const isLast = i === parts.length - 1;
+    if (!isLast && p.slice(-2) === parts[i + 1].slice(-2)) return p.slice(0, -3);
+    return p;
+  }).join(' · ');
+}
+
+function nextSailingsLine(dep, arr) {
+  const times = nextSailings(dep, arr, 3);
+  if (!times.length) return '';
+  return `<div class="ferry-next">Next: ${formatSailingTimes(times)}</div>`;
+}
+
 async function fetchFerry() {
   try {
     const res = await fetch('/api/wsdot?type=ferries');
@@ -2474,6 +2551,7 @@ function renderFerry(vessels) {
               <div class="ferry-meta">
                 <span class="vname">${name}</span> · ${statusSpan}${timeLine}
               </div>
+              ${nextSailingsLine(dep, arr)}
             </div>
             <div class="ferry-term-col">
               <div class="ferry-term right">${shortTerm(arr)}</div>
@@ -4263,6 +4341,7 @@ async function init() {
   fetchNWSAlerts();
   fetchIncidents();
   fetchFerry();
+  fetchFerrySchedules();
   fetchTide();
   await fetchTransit();
   renderMetroSchedule();
@@ -4283,6 +4362,7 @@ async function init() {
   setInterval(fetchTravelTimes, CONFIG.REFRESH_TT_MS);
   setInterval(fetchIncidents,   CONFIG.REFRESH_INCIDENTS_MS);
   setInterval(fetchFerry,       CONFIG.REFRESH_FERRY_MS);
+  setInterval(fetchFerrySchedules, 15 * 60 * 1000); // schedules rarely change within a day
   setInterval(fetchSFD,         5 * 60 * 1000);               // SFD feed updates every 5 min
   setInterval(fetchEvents,         60 * 60 * 1000);            // schedule rarely changes
   setInterval(fetchTicketmaster,   60 * 60 * 1000);            // Ticketmaster — same cadence

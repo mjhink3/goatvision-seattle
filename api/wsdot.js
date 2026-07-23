@@ -8,6 +8,24 @@ const KEY_PARAM = { ferries: 'apiaccesscode' }; // WSDOT uses a different param 
 
 export default async function handler(req, res) {
   const type = req.query.type;
+
+  // WSF Schedule — separate product from the vessel-locations endpoint above, confirmed
+  // live to need no access code at all (tested with and without one, identical result).
+  // Needs a date + routeId path, not a static base URL, so it can't reuse the ENDPOINTS map.
+  if (type === 'schedule') {
+    const { date, routeId } = req.query;
+    if (!date || !routeId) return res.status(400).json({ error: 'Missing date or routeId' });
+    try {
+      const response = await fetch(`https://www.wsdot.wa.gov/ferries/api/schedule/rest/schedule/${date}/${routeId}`);
+      if (!response.ok) throw new Error(`WSF Schedule request failed: HTTP ${response.status}`);
+      const data = await response.json();
+      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600'); // schedules rarely change within a day
+      return res.status(200).json(data);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   const base = ENDPOINTS[type];
   if (!base) return res.status(400).json({ error: 'Unknown or missing type' });
 
