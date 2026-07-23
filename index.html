@@ -201,12 +201,13 @@
   .ferry-meta .vonway { color:var(--amber); font-weight:700; }
   .ferry-meta .vdock  { color:var(--green); font-weight:700; }
   .ferry-no-data { font-size:9px; color:var(--text-dim); font-style:italic; padding:4px 0; }
-  /* ── FERRY TERMINAL THUMBNAILS — small companion to Live Camera Feeds' full stills ── */
-  .ferry-cams { display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); flex-wrap:wrap; }
-  .ferry-cam-cell { width:56px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  /* ── FERRY TERMINAL THUMBNAILS — one pair per vessel track, stacked directly under
+     that track's own left/right terminal label (not a separate route-level row), so
+     the thumbnail column lines up with the exact endpoint it represents. ── */
+  .ferry-term-col { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .ferry-cam-cell { width:56px; display:flex; flex-direction:column; align-items:center; }
   .ferry-cam-cell img { width:56px; height:38px; object-fit:cover; border-radius:2px; border:1px solid var(--border); display:block; }
   .ferry-cam-ph { width:56px; height:38px; display:flex; align-items:center; justify-content:center; background:var(--bg3); border-radius:2px; border:1px solid var(--border); font-size:14px; color:var(--text-dim); }
-  .ferry-cam-label { font-size:7px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:56px; }
 
   /* ── EVENTS ── */
   #events-list { max-height:360px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
@@ -2314,22 +2315,11 @@ const FERRY_ROUTE_KEYWORDS = [
   { name:'Point Defiance / Tahlequah',              keywords:['point defiance','tahlequah'] },
 ];
 
-// Terminals are fixed (only vessels move), so this is a one-time pairing of each route's
-// real terminal names to a camera-matching keyword — resolved against ferryCamPool at
-// render time, not hardcoded to a specific CameraID, so it survives WSDOT reordering its
-// camera list. Fauntleroy/Vashon/Southworth genuinely has 3 terminals, not 2 — it's a
-// triangle route, not a simple start/end corridor like the other three.
-const FERRY_ROUTE_TERMINAL_CAMS = {
-  'Mukilteo / Clinton':                     [{ label:'Mukilteo',       kw:'mukilteo' },       { label:'Clinton',      kw:'clinton' }],
-  'Seattle / Bainbridge Island':             [{ label:'Seattle',        kw:'seattle' },        { label:'Bainbridge',   kw:'bainbridge' }],
-  'Fauntleroy / Vashon Island / Southworth': [{ label:'Fauntleroy',     kw:'fauntleroy' },     { label:'Vashon',       kw:'vashon' }, { label:'Southworth', kw:'southworth' }],
-  'Point Defiance / Tahlequah':              [{ label:'Point Defiance', kw:'point defiance' }, { label:'Tahlequah',    kw:'tahlequah' }],
-};
-
 // Prefer the camera actually AT the terminal (Holding/Terminal/Dock) over approach-road
 // cameras that also happen to mention the terminal name — confirmed against live data that
 // naive first-match picks an approach-road camera for Mukilteo and Clinton specifically.
 function ferryTerminalCam(kw) {
+  if (!kw) return null; // guard: '' is a substring of every Title, would spuriously match the first camera
   const matches = ferryCamPool.filter(c => (c.Title||'').toLowerCase().includes(kw));
   if (!matches.length) return null;
   for (const pref of ['holding','terminal','dock']) {
@@ -2339,20 +2329,26 @@ function ferryTerminalCam(kw) {
   return matches[0];
 }
 
-function renderFerryTerminalCams(routeName) {
-  const terms = FERRY_ROUTE_TERMINAL_CAMS[routeName];
-  if (!terms || !ferryCamPool.length) return '';
-  const cells = terms.map(t => {
-    const cam = ferryTerminalCam(t.kw);
-    if (!cam) return `<div class="ferry-cam-cell"><div class="ferry-cam-ph">&#128247;</div><div class="ferry-cam-label">${t.label}</div></div>`;
-    return `<div class="ferry-cam-cell">
-      <img src="${cam.ImageURL}?_t=${Date.now()}" alt="${t.label} terminal camera" loading="lazy"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="ferry-cam-ph" style="display:none">&#128247;</div>
-      <div class="ferry-cam-label">${t.label}</div>
-    </div>`;
-  }).join('');
-  return `<div class="ferry-cams">${cells}</div>`;
+// Derives the same camera-matching keyword from a real terminal name (e.g. "Vashon
+// Island" -> "vashon") that used to be hand-listed per route. Computed per vessel, keyed
+// to that vessel's own actual DepartingTerminalName/ArrivingTerminalName, not a static
+// per-route list — so the triangle route (Fauntleroy/Vashon/Southworth) automatically
+// shows only whichever two terminals that specific vessel is actually running between.
+function camKeyword(name) {
+  return (name || '').replace(/\bIsland\b/i, '').replace(/\bTerminal\b/i, '').trim().toLowerCase();
+}
+
+// One thumbnail (or graceful placeholder) for a single terminal, meant to sit directly
+// under that terminal's own .ferry-term label — not a shared route-level row anymore.
+function ferryCamCell(terminalName) {
+  if (!ferryCamPool.length || !terminalName) return '';
+  const cam = ferryTerminalCam(camKeyword(terminalName));
+  if (!cam) return `<div class="ferry-cam-cell"><div class="ferry-cam-ph">&#128247;</div></div>`;
+  return `<div class="ferry-cam-cell">
+    <img src="${cam.ImageURL}?_t=${Date.now()}" alt="${terminalName} terminal camera" loading="lazy"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="ferry-cam-ph" style="display:none">&#128247;</div>
+  </div>`;
 }
 
 async function fetchFerry() {
@@ -2463,7 +2459,10 @@ function renderFerry(vessels) {
 
         return `<div class="ferry-vessel-block">
           <div class="ferry-track-wrap">
-            <div class="ferry-term">${shortTerm(dep)}</div>
+            <div class="ferry-term-col">
+              <div class="ferry-term">${shortTerm(dep)}</div>
+              ${ferryCamCell(dep)}
+            </div>
             <div class="ferry-track">
               <div class="ferry-track-bg"></div>
               <div class="ferry-track-fill" style="width:${fill}"></div>
@@ -2471,7 +2470,10 @@ function renderFerry(vessels) {
               <div class="ferry-dot end"></div>
               <div class="ferry-boat" style="left:${pct.toFixed(1)}%">⛴</div>
             </div>
-            <div class="ferry-term right">${shortTerm(arr)}</div>
+            <div class="ferry-term-col">
+              <div class="ferry-term right">${shortTerm(arr)}</div>
+              ${ferryCamCell(arr)}
+            </div>
           </div>
           <div class="ferry-meta">
             <span class="vname">${name}</span> · ${statusSpan}${timeLine}
@@ -2483,7 +2485,6 @@ function renderFerry(vessels) {
     html += `<div class="ferry-route">
       <div class="ferry-route-name">${route.name}</div>
       ${inner}
-      ${renderFerryTerminalCams(route.name)}
     </div>`;
   }
   html += '</div>';
