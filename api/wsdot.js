@@ -7,8 +7,12 @@ const ENDPOINTS = {
   // access code (same as schedule below). Static URL, no date/routeId path, so unlike
   // schedule it fits the existing map directly.
   sailingspace:   'https://www.wsdot.wa.gov/ferries/api/terminals/rest/terminalsailingspace',
+  // WSF Vessels — published fleet specs (RegDeckSpace etc.), used as static background
+  // capacity where terminalsailingspace has no live coverage at all (e.g. the
+  // Fauntleroy/Vashon/Southworth triangle). Also confirmed live to need no access code.
+  vesselspecs:    'https://www.wsdot.wa.gov/ferries/api/vessels/rest/vesselverbose',
 };
-const NO_KEY_ENDPOINTS = new Set(['sailingspace']); // confirmed live: this one needs no key/param at all
+const NO_KEY_ENDPOINTS = new Set(['sailingspace', 'vesselspecs']); // confirmed live: neither needs a key/param
 const KEY_PARAM = { ferries: 'apiaccesscode' }; // WSDOT uses a different param name for this one endpoint
 
 export default async function handler(req, res) {

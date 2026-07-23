@@ -199,6 +199,7 @@
   .ferry-boat { position:absolute; top:50%; transform:translate(-50%,-50%); font-size:20px; line-height:1; transition:left 1.4s ease; filter:drop-shadow(0 0 4px var(--gv-purple)); }
   .ferry-meta { font-size:9px; color:var(--text-dim); text-align:center; }
   .ferry-next { font-size:8px; color:var(--text-dim); text-align:center; margin-top:2px; }
+  .ferry-cap-static { color:var(--text-dim); font-style:italic; } /* deliberately muted/neutral, never a sev-* color — this is a published spec, not a live status */
   .ferry-meta .vname  { color:var(--text-bright); font-weight:600; }
   .ferry-meta .vonway { color:var(--amber); font-weight:700; }
   .ferry-meta .vdock  { color:var(--green); font-weight:700; }
@@ -2472,14 +2473,49 @@ function nextSailingCapacity(dep, arr) {
   return upcoming[0] || null;
 }
 
-function nextSailingsLine(dep, arr) {
+// Static fallback for routes terminalsailingspace never covers at all (confirmed live:
+// the whole Fauntleroy/Vashon/Southworth triangle, plus Tahlequah's departing side).
+// vesselCapacity holds each vessel's published RegDeckSpace from WSF's own fleet specs —
+// checked against vessels we could cross-reference against live MaxSpaceCount and found
+// it consistently close but NOT identical (off by 2-3 on every vessel checked, likely a
+// reserved-space margin the live system applies) — worded as "Max" below, deliberately
+// never as a fraction, so it can never be mistaken for a live remaining-count.
+let vesselCapacity = {}; // { VesselName: RegDeckSpace }
+
+async function fetchVesselSpecs() {
+  try {
+    const res = await fetch('/api/wsdot?type=vesselspecs');
+    if (!res.ok) return;
+    const data = await res.json();
+    const specs = {};
+    for (const v of data) {
+      if (v.VesselName && v.RegDeckSpace != null) specs[v.VesselName] = v.RegDeckSpace;
+    }
+    vesselCapacity = specs;
+    if (ferryVessels.length) renderFerry(ferryVessels); // same fetch-order race as the others
+  } catch (e) { /* leave vesselCapacity as-is; static fallback just stays omitted */ }
+}
+
+// Live remaining count when terminalsailingspace covers this leg; otherwise the vessel's
+// static published capacity if known; otherwise nothing. The two are worded so they can
+// never be confused: "X/Y left" (live) vs "Max X" (static spec, not a live count).
+function capacityHtml(dep, arr, vesselName) {
+  const cap = nextSailingCapacity(dep, arr);
+  if (cap) {
+    const cls = WSF_SPACE_COLOR_CLASS[cap.hexColor] || '';
+    return ` <span class="${cls}">&#128663; ${cap.count}/${cap.max} left</span>`;
+  }
+  const staticMax = vesselCapacity[vesselName];
+  if (staticMax) {
+    return ` <span class="ferry-cap-static">&#128663; Max ${staticMax}</span>`;
+  }
+  return '';
+}
+
+function nextSailingsLine(dep, arr, vesselName) {
   const times = nextSailings(dep, arr, 3);
   if (!times.length) return '';
-  const cap = nextSailingCapacity(dep, arr);
-  const capHtml = cap
-    ? ` <span class="${WSF_SPACE_COLOR_CLASS[cap.hexColor] || ''}">&#128663; ${cap.count}/${cap.max}</span>`
-    : '';
-  return `<div class="ferry-next">Next: ${formatSailingTimes(times)}${capHtml}</div>`;
+  return `<div class="ferry-next">Next: ${formatSailingTimes(times)}${capacityHtml(dep, arr, vesselName)}</div>`;
 }
 
 async function fetchFerry() {
@@ -2605,7 +2641,7 @@ function renderFerry(vessels) {
               <div class="ferry-meta">
                 <span class="vname">${name}</span> · ${statusSpan}${timeLine}
               </div>
-              ${nextSailingsLine(dep, arr)}
+              ${nextSailingsLine(dep, arr, name)}
             </div>
             <div class="ferry-term-col">
               <div class="ferry-term right">${shortTerm(arr)}</div>
@@ -4397,6 +4433,7 @@ async function init() {
   fetchFerry();
   fetchFerrySchedules();
   fetchFerrySailingSpace();
+  fetchVesselSpecs(); // fleet specs are effectively permanent — fetched once, no refresh interval needed
   fetchTide();
   await fetchTransit();
   renderMetroSchedule();
