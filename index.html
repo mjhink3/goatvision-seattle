@@ -208,7 +208,7 @@
      that track's own left/right terminal label (not a separate route-level row), so
      the thumbnail column lines up with the exact endpoint it represents. ── */
   .ferry-term-col { display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .ferry-cam-cell { width:56px; display:flex; flex-direction:column; align-items:center; }
+  .ferry-cam-cell { width:56px; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
   .ferry-cam-cell img { width:56px; height:38px; object-fit:cover; border-radius:2px; border:1px solid var(--border); display:block; }
   .ferry-cam-ph { width:56px; height:38px; display:flex; align-items:center; justify-content:center; background:var(--bg3); border-radius:2px; border:1px solid var(--border); font-size:14px; color:var(--text-dim); }
 
@@ -2346,7 +2346,12 @@ function ferryCamCell(terminalName) {
   if (!ferryCamPool.length || !terminalName) return '';
   const cam = ferryTerminalCam(camKeyword(terminalName));
   if (!cam) return `<div class="ferry-cam-cell"><div class="ferry-cam-ph">&#128247;</div></div>`;
-  return `<div class="ferry-cam-cell">
+  // Reuses the exact same lightbox as Live Camera Feeds (openLightbox), passing the
+  // camera URL/label directly rather than a scenicCams index — this camera came from
+  // ferryTerminalCam()'s own Holding/Terminal/Dock preference, which can genuinely
+  // differ from whichever camera scenicCams picked for the same terminal.
+  const label = `${terminalName} Terminal Camera`.replace(/'/g, "\\'");
+  return `<div class="ferry-cam-cell" onclick="openLightbox('${cam.ImageURL}', '${label}')" title="Click to expand">
     <img src="${cam.ImageURL}?_t=${Date.now()}" alt="${terminalName} terminal camera" loading="lazy"
          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
     <div class="ferry-cam-ph" style="display:none">&#128247;</div>
@@ -2515,7 +2520,11 @@ function capacityHtml(dep, arr, vesselName) {
 function nextSailingsLine(dep, arr, vesselName) {
   const times = nextSailings(dep, arr, 3);
   if (!times.length) return '';
-  return `<div class="ferry-next">Next: ${formatSailingTimes(times)}${capacityHtml(dep, arr, vesselName)}</div>`;
+  // "Next from X" — dep is already this specific vessel's real departure terminal for
+  // its current direction (same derivation already used for the schedule/capacity
+  // lookups above), not a fixed side — it flips correctly when a vessel is running the
+  // opposite leg of the same route.
+  return `<div class="ferry-next">Next from ${dep}: ${formatSailingTimes(times)}${capacityHtml(dep, arr, vesselName)}</div>`;
 }
 
 async function fetchFerry() {
@@ -3857,12 +3866,24 @@ function refreshAllCams() {
   document.getElementById('scenic-ts').textContent = `${scenicCams.length} feeds · ${ts()}`;
 }
 
-function openLightbox(idx) {
-  const cam = scenicCams[idx];
-  if (!cam) return;
+// Accepts either a scenicCams index (existing Live Camera Feeds call sites, unchanged)
+// or a direct imageUrl+label pair. The direct form exists because ferry terminal
+// thumbnails pick their camera via ferryTerminalCam()'s Holding/Terminal/Dock preference,
+// which can genuinely differ from whichever camera scenicCams picked for the same
+// terminal (confirmed earlier for Mukilteo specifically) — indexing into scenicCams
+// would silently open the wrong camera, so ferry thumbnails pass their own URL directly.
+function openLightbox(idxOrUrl, label) {
+  let url, lbl;
+  if (typeof idxOrUrl === 'number') {
+    const cam = scenicCams[idxOrUrl];
+    if (!cam) return;
+    url = cam.ImageURL; lbl = camLabel(cam);
+  } else {
+    url = idxOrUrl; lbl = label || '';
+  }
   const lb = document.getElementById('cam-lightbox');
-  document.getElementById('cam-lb-img').src   = cam.ImageURL + '?_t=' + Date.now();
-  document.getElementById('cam-lb-label').textContent = camLabel(cam);
+  document.getElementById('cam-lb-img').src = url + '?_t=' + Date.now();
+  document.getElementById('cam-lb-label').textContent = lbl;
   lb.classList.add('open');
 }
 
