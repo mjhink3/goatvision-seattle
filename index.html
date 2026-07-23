@@ -3637,6 +3637,13 @@ async function fetchScenicCams() {
     scenicCams = picked;
     renderScenicGrid();
     document.getElementById('scenic-ts').textContent = `${scenicCams.length} feeds · ${ts()}`;
+
+    // fetchFerry() fires much earlier in init() than fetchScenicCams() does (it's queued
+    // after an awaited fetchTransit()), so on first page load renderFerry() almost always
+    // runs before ferryCamPool is populated — thumbnails would render as empty and then
+    // sit that way until fetchFerry()'s own next 2-minute cycle. Re-render immediately
+    // once camera data actually arrives, using the ferry data already fetched.
+    if (ferryVessels.length) renderFerry(ferryVessels);
   } catch(e) {
     document.getElementById('scenic-grid').innerHTML =
       `<div class="error-msg" style="grid-column:1/-1">Camera feeds unavailable: ${e.message}</div>`;
