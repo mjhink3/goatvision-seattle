@@ -2503,12 +2503,12 @@ async function fetchVesselSpecs() {
 
 // Live remaining count when terminalsailingspace covers this leg; otherwise the vessel's
 // static published capacity if known; otherwise nothing. The two are worded so they can
-// never be confused: "X/Y left" (live) vs "Max X" (static spec, not a live count).
+// never be confused: "X/Y spots open" (live) vs "Max X" (static spec, not a live count).
 function capacityHtml(dep, arr, vesselName) {
   const cap = nextSailingCapacity(dep, arr);
   if (cap) {
     const cls = WSF_SPACE_COLOR_CLASS[cap.hexColor] || '';
-    return ` <span class="${cls}">&#128663; ${cap.count}/${cap.max} left</span>`;
+    return ` <span class="${cls}">&#128663; ${cap.count}/${cap.max} spots open</span>`;
   }
   const staticMax = vesselCapacity[vesselName];
   if (staticMax) {
