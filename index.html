@@ -578,7 +578,12 @@
     grid-template-rows: repeat(4, auto);
     grid-auto-flow: column;
     gap: 1px;
-    background: var(--border);
+    /* Westside has 4 cards, Eastside has 2, so this 2x4 grid always leaves 2 cells
+       unfilled (bottom-right) — background matches .vet-card's own fill instead of
+       --border, so the empty cells read as the same dark surface instead of a
+       solid purple slab (--border is a much lighter purple-indigo, meant only to
+       show through as a hairline gap between filled cards, not a whole cell). */
+    background: var(--bg2);
     border-top: 1px solid var(--border);
   }
   .vet-card {
