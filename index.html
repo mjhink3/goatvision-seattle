@@ -1098,15 +1098,13 @@
         <circle cx="452" cy="168" r="3" fill="#635882"/>
         <text x="458" y="172" font-family="monospace" font-size="9" fill="#8a7faa">Issaquah</text>
 
-        <!-- Legend -->
-        <rect x="464" y="12" width="104" height="48" fill="rgba(7,6,15,0.88)" rx="3" stroke="#2a2252" stroke-width="1"/>
-        <line x1="472" y1="26" x2="496" y2="26" stroke="#3dd62a" stroke-width="4" stroke-linecap="round"/>
-        <text x="502" y="29" font-family="monospace" font-size="8" fill="#8a7faa">On Time</text>
-        <line x1="472" y1="40" x2="496" y2="40" stroke="#f0a500" stroke-width="4" stroke-linecap="round"/>
-        <text x="502" y="43" font-family="monospace" font-size="8" fill="#8a7faa">Slow</text>
-        <line x1="472" y1="54" x2="496" y2="54" stroke="#e63946" stroke-width="4" stroke-linecap="round"/>
-        <text x="502" y="57" font-family="monospace" font-size="8" fill="#8a7faa">Heavy Delay</text>
       </svg>
+    </div>
+    <div class="tm-legend">
+      <div class="tm-legend-item"><div class="tm-swatch" style="background:#3dd62a"></div> On Time</div>
+      <div class="tm-legend-item"><div class="tm-swatch" style="background:#f0a500"></div> Slow (&gt;1.1x avg)</div>
+      <div class="tm-legend-item"><div class="tm-swatch" style="background:#e63946"></div> Heavy Delay (&gt;1.5x avg)</div>
+      <div class="tm-legend-item"><div class="tm-swatch" style="background:#2a2252"></div> No data</div>
     </div>
   </div>
 
