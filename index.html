@@ -3202,7 +3202,7 @@ function renderBike(data) {
 
   // Time of day score (out of 20) — Seattle-specific patterns
   let timeScore = 20;
-  let timeLabel = 'Time of day';
+  let timeLabel = null;
   if (h < 6 || h >= 21) {
     timeScore = 5;  // dark hours — poor visibility
     timeLabel = h < 6 ? 'Pre-dawn' : 'After dark';
@@ -3248,7 +3248,7 @@ function renderBike(data) {
       <div class="bike-factor-row"><span class="bike-factor-name">Wind (${Math.round(wind)} mph)</span>${pips(windScore,20)}</div>
       <div class="bike-factor-row"><span class="bike-factor-name">Precip chance (${precip}%)</span>${pips(precipScore,20)}</div>
       <div class="bike-factor-row"><span class="bike-factor-name">Sky (${wmoDesc(code)})</span>${pips(wxScore,20)}</div>
-      <div class="bike-factor-row"><span class="bike-factor-name">${timeLabel}</span>${pips(timeScore,20)}</div>
+      <div class="bike-factor-row"><span class="bike-factor-name">${timeLabel ? `Time of Day (${timeLabel})` : 'Time of Day'}</span>${pips(timeScore,20)}</div>
     </div>`;
 }
 
