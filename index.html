@@ -934,6 +934,7 @@
       <span class="refresh-ts" id="weather-ts">—</span>
     </div>
     <div id="conditions-content"><div class="loading-msg">Fetching weather…</div></div>
+    <div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Live via Open-Meteo API · updated every 5 min</div>
   </div>
 
   <!-- ── 7-DAY FORECAST ── -->
@@ -943,6 +944,7 @@
       <span class="refresh-ts" id="forecast7-ts">—</span>
     </div>
     <div id="forecast7-content"><div class="loading-msg">Fetching forecast…</div></div>
+    <div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Live via Open-Meteo API · updated every 5 min</div>
   </div>
 
   <!-- ── NWS ACTIVE ALERTS ── -->
@@ -964,6 +966,7 @@
       <span class="refresh-ts" id="incidents-ts">—</span>
     </div>
     <div id="incidents-list"><div class="loading-msg">Loading incidents…</div></div>
+    <div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Live via WSDOT Traveler Information API · updated every 2 min</div>
   </div>
 
   <!-- ── TRAVEL TIMES ── -->
@@ -980,6 +983,7 @@
       <button class="tt-filter-btn" data-road="I-405">I-405</button>
     </div>
     <div id="tt-list"><div class="loading-msg">Loading travel times…</div></div>
+    <div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Live via WSDOT Traveler Information API · updated every 2 min</div>
   </div>
 
   <!-- ── DRIVE WINDOW ── -->
@@ -1146,6 +1150,7 @@
       <span class="refresh-ts" id="link-map-ts">—</span>
     </div>
     <div id="link-map-content"><div class="loading-msg" style="line-height:1.4">Fetching live train positions&hellip;</div></div>
+    <div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Live via OneBusAway Puget Sound API · updated every 60 sec</div>
   </div>
 
   <!-- ── KING COUNTY METRO ── -->
@@ -1170,6 +1175,7 @@
       <span class="refresh-ts" id="events-ts">—</span>
     </div>
     <div id="events-list"><div class="loading-msg">Loading events…</div></div>
+    <div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">ESPN Public Schedule API · Ticketmaster Discovery API · updated hourly</div>
   </div>
 
   <!-- ── SEA-TAC AIRPORT STATUS ── -->
@@ -1179,6 +1185,7 @@
       <span class="refresh-ts" id="sea-ts">—</span>
     </div>
     <div id="sea-content"><div class="loading-msg">Loading FAA status&hellip;</div></div>
+    <div style="padding:4px 12px 7px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Live via FAA NASSTATUS API · updated every 5 min</div>
     <div style="text-align:right;padding:4px 8px;font-size:8px;">
       <a href="https://www.flysea.org/flight-info/flight-status/" target="_blank" rel="noopener noreferrer" style="color:var(--text-dim);text-decoration:none;">Live flight status at flysea.org ↗</a>
       &nbsp;&middot;&nbsp;
@@ -1226,6 +1233,7 @@
         <span class="refresh-ts" id="tide-ts">—</span>
       </div>
       <div id="tide-content" style="padding:10px"><div class="loading-msg">Loading tide data…</div></div>
+      <div style="padding:4px 10px 6px;font-size:9px;color:var(--text-dim);border-top:1px solid var(--border)">Live via NOAA CO-OPS Tides &amp; Currents API · updated every 10 min</div>
     </div>
 
     <div class="panel" id="bike-panel">
@@ -1247,7 +1255,7 @@
     <div id="scenic-grid"><div class="loading-msg" style="grid-column:1/-1;padding:20px">Loading camera feeds…</div></div>
     <div id="scenic-footer">
       <button class="scenic-btn" onclick="refreshAllCams()">&#8635; Refresh All</button>
-      <span style="font-size:9px;color:var(--text-dim)" id="scenic-auto-label">Auto-refreshes every 60s &nbsp;·&nbsp; Click any image to expand</span>
+      <span style="font-size:9px;color:var(--text-dim)" id="scenic-auto-label">Live via WSDOT traffic camera API &nbsp;·&nbsp; Auto-refreshes every 60s &nbsp;·&nbsp; Click any image to expand</span>
     </div>
   </div>
 
@@ -3426,7 +3434,7 @@ function renderTransit(arrivalMap) {
 
   document.getElementById('transit-content').innerHTML =
     diagramHtml + colsHtml +
-    `<div class="transit-footer"><sup>s</sup> = scheduled (no live prediction) · T Line not in OBA feed</div>`;
+    `<div class="transit-footer">Live via OneBusAway Puget Sound API · updated every 90 sec · <sup>s</sup> = scheduled (no live prediction) · T Line not in OBA feed</div>`;
 }
 
 // ╔══════════════════════════════════════════════════════════╗
